@@ -1,0 +1,252 @@
+#!/usr/bin/perl
+
+use Term::ReadLine;
+use Data::Dumper;
+
+use strict;
+use warnings;
+
+my (@stack, @register, @rbackup, @sbackup);
+my $prompt  = "% ";
+my $term    = Term::ReadLine->new('rpn calc');
+my $debug   = 0;
+my $tty     = 1;
+my $VERSION = '1.00';
+my $op;
+
+my ($arg1, $arg2) = @ARGV;
+if ($arg1 eq '-d') {
+  $debug = 1;
+  $op = $arg2;
+}
+elsif ($arg1 eq '-h') {
+  help();
+  exit;
+}
+elsif ($arg1) {
+  $op = $arg1;
+}
+
+if ($op) {
+  $tty = 0;
+  while (<STDIN>) {
+    chomp;
+    push @stack, split /\s\s*/;
+  }
+  print calc($op);
+  exit;
+}
+
+my %commands = (
+                q   => sub { exit; },
+                '?' => sub { help(); },
+                s   => sub { dumpstack(); },
+                c   => sub { @stack = @register = (); },
+                d   => sub {
+                  if ($debug) {
+                    $debug = 0;
+                  }
+                  else {
+                    $debug = 1;
+                  }
+                },
+                u   => sub { undo();  dumpstack(); },
+                r   => sub {
+                  backup();
+                  if (scalar @stack == 1 && @register) {
+                    @register = @stack;
+                    @stack    = @rbackup; # == @register
+                  }
+                  else {
+                    @stack = reverse(@stack);
+                  }
+                  dumpstack();
+                }
+               );
+
+my $OUT = $term->OUT || \*STDOUT;
+while ( defined ($_ = $term->readline($prompt)) ) {
+  if (/^-?[\.\d]+?$/) {
+    # number
+    pushstack($_);
+    dumpstack();
+  }
+  else {
+    if (/^[a-z\?]+?$/) {
+      cmd($_);
+    }
+    elsif (/^[<>x\%\|\&\^+\-\*\/]$/) {
+      # calc
+      print calc($_);
+    }
+  }
+}
+
+sub cmd {
+  my $c = shift;
+
+  if (exists $commands{$_}) {
+    my $sub = $commands{$_};
+    &$sub;
+  }
+  else {
+    print "unknown command!\n";
+  }
+}
+
+sub pushstack {
+  my $num = shift;
+  if ($num) {
+    if ($num =~ /^\./) {
+      $num = '0' . $num;
+    }
+    push @stack, $num;
+  }
+}
+
+sub dumpstack {
+  my $p = 1;
+  foreach my $n (@register) {
+    printf "r %04d - %s\n", $p++, $n;
+  }
+  foreach my $n (@stack) {
+    printf "s %04d - %s\n", $p++, $n;
+  }
+  print "\n";
+}
+
+sub calc {
+  my $op = shift;
+  my $res;
+  my $code;
+
+  my @last = getlast();
+
+  if (@last) {
+    # map operators
+    if ($op eq '^') {
+      $op = '**';
+    }
+    elsif ($op eq 'x') {
+      $op = '^';
+    }
+    elsif ($op eq '<') {
+      $op = '<<';
+    }
+    elsif ($op eq '>') {
+      $op = '>>';
+    }
+
+    # direct ops
+    if ($op eq '%') {
+      if (scalar @last == 2) {
+        my ($a, $b) = @last;
+        $code = "\$res = ($a / 100) * $b";
+      }
+      else {
+        print "percent only possible with 2 values\n";
+        undo();
+        return;
+      }
+    }
+    else {
+      # rpn op
+      $code = "\$res = " . join(" $op ",  @last);
+    }
+
+    # execute
+    eval $code;
+
+    if ($@) {
+      # error, reset stack
+      die $@;
+    }
+    else {
+      push @register, $res;
+      if ($debug) {
+        print "DEBUG: $code\n";
+      }
+      if ($tty) {
+        return "=> $res\n\n";
+      }
+      else {
+        return "$res\n";
+      }
+    }
+  }
+  else {
+    return;
+  }
+}
+
+sub undo {
+  @stack = @sbackup, @register = @rbackup;
+}
+
+sub backup {
+  @sbackup = @stack;
+  @rbackup = @register;
+}
+
+
+sub getlast {
+  my @all = ();
+
+  if (@stack) {
+    if (scalar @stack == 1 && @register) {
+      @all = (@register, @stack);
+      @register = @stack = ();
+    }
+    elsif (scalar @stack == 1) {
+      return ();
+    }
+    else {
+      @all = @stack;
+      @stack = ();
+    }
+
+    return @all;
+  }
+  else {
+    if (@register) {
+      @all = @register;
+      @register = ();
+    }
+  }
+
+  return @all;
+}
+
+sub help {
+  print qq~
+Reverse Polish Notation Calculator, version $VERSION.
+Copyleft (L) 2019 - Thomas von Dein.
+Licensed under the terms of the GPL 3.0.
+
+Commandline: rpn [-d] [<operator>]
+
+If <operator> is provided, read numbers from STDIN,
+otherwise runs interactively.
+
+Available commands:
+c    clear stack
+s    show the stack
+d    toggle debugging (current setting: $debug)
+r    reverse the stack (w/ reg if stack==1)
+u    undo last operation
+q    finish
+?    print help
+
+Available operators:
++    add
+-    substract
+/    divide
+*    multiply
+^    expotentiate
+%    percent
+&    bitwise AND
+|    bitwise OR
+x    bitwise XOR
+
+~;
+}
