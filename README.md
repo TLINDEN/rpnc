@@ -1,7 +1,7 @@
 ## Reverse Polish Notation Calculator for the commandline
 
 This is a small commandline calculator which takes its input in
-[https://en.wikipedia.org/wiki/Reverse_Polish_notation](reverse polish notation)
+[reverse polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation)
 form.
 
 It  has  an  unlimited  stack,  supports  various  stack  manipulation
