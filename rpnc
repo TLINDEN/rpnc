@@ -1,0 +1,350 @@
+#!/usr/bin/perl
+
+use Term::ReadLine;
+use Data::Dumper;
+use Getopt::Long;
+
+use strict;
+use warnings;
+
+my (@stack, @substack, @backup, @subbackup);
+my $term      = Term::ReadLine->new('rpn calc');
+my $debug     = 0;
+my $showstack = 1;
+my $tty       = 1;
+my $VERSION   = '1.00';
+my $sub       = 0;
+my $op;
+
+my ($o_h, $o_v, $o_s);
+Getopt::Long::Configure( qw(no_ignore_case));
+if (! GetOptions (
+                  "version|v"          => \$o_v,
+                  "help|h"             => \$o_h,
+                  "debug|d"            => \$debug,
+                  "nostack|n"          => \$o_s
+                 )    ) {
+  help();
+  exit;
+}
+
+if ($o_v) {
+  print "$0 version $VERSION\n";
+  exit;
+}
+
+if ($o_h) {
+  help();
+  exit;
+}
+
+if ($o_s) {
+  $showstack = 0;
+}
+
+$op = shift;
+
+if ($op) {
+  $tty = 0;
+  while (<STDIN>) {
+    chomp;
+    push @stack, split /\s\s*/;
+  }
+  print calc($op);
+  exit;
+}
+
+my %commands = (
+                q   => sub { exit; },
+                '?' => sub { help(); },
+                s   => sub { dumpstack(); },
+                c   => sub { clearstack(); },
+                d   => sub {
+                  if ($debug) {
+                    $debug = 0;
+                  }
+                  else {
+                    $debug = 1;
+                  }
+                },
+                u   => sub { undo();  dumpstack(); },
+                r   => sub { reversestack(); },
+                R   => sub { rotatestack(); },
+                '(' => sub { $sub = 1 },
+                ')' => sub { $sub = 0 },
+               );
+
+my $OUT = $term->OUT || \*STDOUT;
+while ( defined ($_ = $term->readline(prompt())) ) {
+  foreach my $tok (split /\s+/) {
+    if ($tok =~ /^-?[\.\d]+?$/) {
+      # number
+      pushstack($tok);
+      dumpstack();
+    }
+    else {
+      if ($tok =~ /^[\(\)csdrRuq\?]+?$/) {
+        cmd($tok);
+      }
+      elsif ($tok =~ /^[V<>x\%\|\&\^+\-\*\/]$/) {
+        print calc($tok);
+      }
+    }
+  }
+}
+
+sub cmd {
+  my $c = shift;
+
+  if (exists $commands{$c}) {
+    my $sub = $commands{$c};
+    &$sub;
+  }
+  else {
+    print "unknown command '$c'!\n";
+  }
+}
+
+sub clearstack {
+  if ($sub) {
+    @substack = ();
+  }
+  else {
+    @stack = ();
+  }
+}
+
+sub reversestack {
+  backup();
+  if ($sub) {
+    @substack = reverse @substack;
+  }
+  else {
+    @stack = reverse @stack;
+  }
+  dumpstack();
+}
+
+sub rotatestack {
+  backup();
+  if ($sub) {
+    my $f = shift @substack;
+    @substack = (@substack, $f);
+  }
+  else {
+    my $f = shift @stack;
+    @stack = (@stack, $f);
+  }
+  dumpstack();
+}
+
+sub pushstack {
+  my $num = shift;
+  if ($num) {
+    if ($num =~ /^\./) {
+      $num = '0' . $num;
+    }
+    if ($sub) {
+      push @substack, $num;
+    }
+    else {
+      push @stack, $num;
+    }
+  }
+}
+
+sub dumpstack {
+  return unless $showstack;
+
+  my $prefix = 'stack';
+  my @all;
+
+  if ($sub) {
+    @all = @substack;
+  }
+  else {
+    @all = @stack;
+  }
+
+  my $p = scalar @all;
+
+  foreach my $n (@all) {
+    printf "%s %4d: %s\n", $prefix, $p--, $n;
+  }
+
+  print "\n";
+}
+
+sub undo {
+  if ($sub) {
+    @substack = @subbackup;
+  }
+  else {
+    @stack = @backup;
+  }
+}
+
+sub backup {
+  if ($sub) {
+    @subbackup = @substack;
+  }
+  else {
+    @backup = @stack;
+  }
+}
+
+
+sub getlast {
+  my @all = ();
+
+  backup();
+
+  if ($sub) {
+    @all = @substack;
+    @substack = ();
+  }
+  else {
+    if (@stack) {
+      if (scalar @stack == 1) {
+        @all = pop @stack;
+      }
+      else {
+        @all = reverse (pop @stack, pop @stack);
+      }
+    }
+  }
+
+  return @all;
+}
+
+sub prompt {
+  my $count;
+  my $prompt;
+
+  if ($sub) {
+    $count  = scalar @substack;
+    $prompt = '%--(';
+  }
+  else {
+    $count  = scalar @stack;
+    $prompt = '%';
+  }
+
+  return sprintf "%2d %s ", $count, $prompt;
+}
+
+sub calc {
+  my $op = shift;
+  my $res;
+  my $code;
+
+  my @last = getlast();
+
+  if (@last) {
+    # map operators
+    if ($op eq '^') {
+      $op = '**';
+    }
+    elsif ($op eq 'x') {
+      $op = '^';
+    }
+    elsif ($op eq '<') {
+      $op = '<<';
+    }
+    elsif ($op eq '>') {
+      $op = '>>';
+    }
+
+    # direct and special ops
+    if ($op eq '%') {
+      if (scalar @last == 2) {
+        my ($a, $b) = @last;
+        $code = "($a / 100) * $b";
+      }
+      else {
+        print "percent only possible with 2 values\n";
+        undo();
+        return;
+      }
+    }
+    elsif ($op eq 'V') {
+      if (scalar @last == 2) {
+        my ($a, $b) = @last;
+        $code = "$a ** (1 / $b)";
+      }
+      else {
+        my $a = pop @last;
+        $code = "$a ** (1 / 2)";
+      }
+    }
+    else {
+      # rpn op
+      $code = join(" $op ",  @last);
+    }
+
+    # execute
+    eval "\$res = $code";
+
+    if ($@) {
+      # error, reset stack
+      print "Syntax error: $@, resetting stack\n";
+      undo();
+    }
+    else {
+      push @stack, $res;
+      $sub = 0;
+      if ($debug) {
+        print "DEBUG: $code = $res\n";
+      }
+      if ($tty) {
+        dumpstack();
+        return "=> $res\n\n";
+      }
+      else {
+        return "$res\n";
+      }
+    }
+  }
+  else {
+    return;
+  }
+}
+
+
+sub help {
+  print qq~
+Reverse Polish Notation Calculator, version $VERSION.
+Copyleft (L) 2019 - Thomas von Dein.
+Licensed under the terms of the GPL 3.0.
+
+Commandline: rpn [-d] [<operator>]
+
+If <operator> is provided, read numbers from STDIN,
+otherwise runs interactively.
+
+Available commands:
+c    clear stack
+s    show the stack
+d    toggle debugging (current setting: $debug)
+r    reverse the stack
+R    rotate the stack
+(    enter collect mode
+)    leave collect mode
+u    undo last operation
+q    finish (C-d works as well)
+?    print help
+
+Available operators:
++     add
+-     substract
+/     divide
+*     multiply
+^     expotentiate
+%     percent
+&     bitwise AND
+|     bitwise OR
+x     bitwise XOR
+V     pull root (2nd if stack==1)
+
+~;
+}
