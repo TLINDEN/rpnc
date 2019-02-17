@@ -12,7 +12,7 @@ my $term      = Term::ReadLine->new('rpn calc');
 my $debug     = 0;
 my $showstack = 1;
 my $tty       = 1;
-my $VERSION   = '1.00';
+my $VERSION   = '1.01';
 my $sub       = 0;
 my $op;
 
@@ -54,25 +54,52 @@ if ($op) {
   exit;
 }
 
+# management commands
 my %commands = (
                 q   => sub { exit; },
                 '?' => sub { help(); },
                 s   => sub { dumpstack(); },
                 c   => sub { clearstack(); },
-                d   => sub {
-                  if ($debug) {
-                    $debug = 0;
-                  }
-                  else {
-                    $debug = 1;
-                  }
-                },
-                u   => sub { undo();  dumpstack(); },
+                d   => sub { $debug ^= 1; },
+                u   => sub { undo(); dumpstack(); },
                 r   => sub { reversestack(); },
                 R   => sub { rotatestack(); },
                 '(' => sub { $sub = 1 },
                 ')' => sub { $sub = 0 },
                );
+
+# executed 1:1, or aliased
+my %alias   = qw(^ ** x ^ < << > >> + + - - / / * * & & | |);
+
+# hand coded functions
+my %func    = (
+               '%' => sub {
+                       if (scalar @_ == 2) {
+                         my ($a, $b) = @_;
+                         return "($a / 100) * $b";
+                       }
+                       else {
+                         print "percent only possible with 2 values\n";
+                         undo();
+                         return 0;
+                       }
+                     },
+               'V' => sub {
+                 if (scalar @_ == 2) {
+                   my ($a, $b) = @_;
+                   return "$a ** (1 / $b)";
+                 }
+                 else {
+                   my $a = pop @_;
+                   return "$a ** (1 / 2)";
+                 }
+               },
+               'pr' => sub {
+                 # parallel resistance, maybe add ~/.rpncrc support
+                 # where to add such custom functions...
+                 return "1 / (" . join(' + ', map { "1 / $_"} @_) . ")";
+               }
+              );
 
 my $OUT = $term->OUT || \*STDOUT;
 while ( defined ($_ = $term->readline(prompt())) ) {
@@ -83,10 +110,10 @@ while ( defined ($_ = $term->readline(prompt())) ) {
       dumpstack();
     }
     else {
-      if ($tok =~ /^[\(\)csdrRuq\?]+?$/) {
+      if (exists $commands{$tok}) {
         cmd($tok);
       }
-      elsif ($tok =~ /^[V<>x\%\|\&\^+\-\*\/]$/) {
+      else {
         print calc($tok);
       }
     }
@@ -241,45 +268,19 @@ sub calc {
   my @last = getlast();
 
   if (@last) {
-    # map operators
-    if ($op eq '^') {
-      $op = '**';
+    if (exists $alias{$op}) {
+      $op = $alias{$op};
+      $code = join(" $op ",  @last);
     }
-    elsif ($op eq 'x') {
-      $op = '^';
-    }
-    elsif ($op eq '<') {
-      $op = '<<';
-    }
-    elsif ($op eq '>') {
-      $op = '>>';
-    }
-
-    # direct and special ops
-    if ($op eq '%') {
-      if (scalar @last == 2) {
-        my ($a, $b) = @last;
-        $code = "($a / 100) * $b";
-      }
-      else {
-        print "percent only possible with 2 values\n";
-        undo();
-        return;
-      }
-    }
-    elsif ($op eq 'V') {
-      if (scalar @last == 2) {
-        my ($a, $b) = @last;
-        $code = "$a ** (1 / $b)";
-      }
-      else {
-        my $a = pop @last;
-        $code = "$a ** (1 / 2)";
-      }
+    elsif (exists $func{$op}) {
+      my $sub = $func{$op};
+      $code = &$sub(@last);
+      return unless $code;
     }
     else {
-      # rpn op
-      $code = join(" $op ",  @last);
+      print "syntax error or unknown command!\n";
+      undo();
+      return;
     }
 
     # execute
