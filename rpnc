@@ -7,12 +7,12 @@ use Getopt::Long;
 use strict;
 use warnings;
 
-my (@stack, @substack, @backup, @subbackup);
+my (@stack, @substack, @backup, @subbackup, @hist);
 my $term      = Term::ReadLine->new('rpn calc');
 my $debug     = 0;
 my $showstack = 1;
 my $tty       = 1;
-my $VERSION   = '1.01';
+my $VERSION   = '1.02';
 my $sub       = 0;
 my $op;
 
@@ -64,6 +64,7 @@ my %commands = (
                 u   => sub { undo(); dumpstack(); },
                 r   => sub { reversestack(); },
                 R   => sub { rotatestack(); },
+                h   => sub { showhist(); },
                 '(' => sub { $sub = 1 },
                 ')' => sub { $sub = 0 },
                );
@@ -129,6 +130,12 @@ sub cmd {
   }
   else {
     print "unknown command '$c'!\n";
+  }
+}
+
+sub showhist {
+  foreach my $entry (@hist) {
+    printf "History: %10s = %s\n", $entry->[0], $entry->[1];
   }
 }
 
@@ -257,7 +264,7 @@ sub prompt {
     $prompt = '%';
   }
 
-  return sprintf "%2d %s ", $count, $prompt;
+  return sprintf "%3d %s ", $count, $prompt;
 }
 
 sub calc {
@@ -294,11 +301,14 @@ sub calc {
     else {
       push @stack, $res;
       $sub = 0;
+
       if ($debug) {
         print "DEBUG: $code = $res\n";
       }
+
       if ($tty) {
         dumpstack();
+        push @hist, [$res, $code];
         return "=> $res\n\n";
       }
       else {
@@ -332,6 +342,7 @@ R    rotate the stack
 (    enter collect mode
 )    leave collect mode
 u    undo last operation
+h    show history of past operations
 q    finish (C-d works as well)
 ?    print help
 
