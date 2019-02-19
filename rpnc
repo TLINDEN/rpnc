@@ -12,7 +12,7 @@ my $term      = Term::ReadLine->new('rpn calc');
 my $debug     = 0;
 my $showstack = 1;
 my $tty       = 1;
-my $VERSION   = '1.03dev';
+my $VERSION   = '1.03';
 my $sub       = 0;
 my $op;
 
@@ -59,9 +59,11 @@ my %commands = (
                 q   => sub { exit; },
                 '?' => sub { help(); },
                 s   => sub { dumpstack(); },
+                sa  => sub { dumpstack(1); },
                 c   => sub { clearstack(); },
                 cx  => sub { clearstack(1); dumpstack(); },
                 d   => sub { $debug ^= 1; },
+                S   => sub { $showstack ^= 1; },
                 u   => sub { undo(); dumpstack(); },
                 rs  => sub { reversestack(); },
                 Rs  => sub { rotatestack(); },
@@ -238,21 +240,30 @@ sub pushstack {
 
 sub dumpstack {
   return unless $showstack;
-
+  my $max    = shift;
+  my $x      = ' ';
   my $prefix = 'stack';
   my @all;
 
   if ($sub) {
     @all = @substack;
+    $prefix = 'collectorstack';
   }
   else {
     @all = @stack;
   }
 
+  my $abs = scalar @all;
+  if (! $max && $abs > 10) {
+    @all = @all[-10 .. -1];
+    printf "%s    [..]\n", $prefix;
+  }
+
   my $p = scalar @all;
 
   foreach my $n (@all) {
-    printf "%s %4d: %s\n", $prefix, $p--, $n;
+    $x = 'X' if($p == 1);
+    printf "%s %s %4d: %s\n", $prefix, $x, $p--, $n;
   }
 
   print "\n";
@@ -382,34 +393,22 @@ Commandline: rpn [-d] [<operator>]
 If <operator> is provided, read numbers from STDIN,
 otherwise runs interactively.
 
-Available commands:
-cx   clear X (last stack element)
-c    clear stack
-s    show the stack
-d    toggle debugging (current setting: $debug)
-rs   reverse the stack
-Rs   rotate the stack
-(    enter collect mode
-)    leave collect mode
-u    undo last operation
-h    show history of past operations
-q    finish (C-d works as well)
-?    print help
-
-Available operators:
-+     add
--     substract
-/     divide
-*     multiply
-^     expotentiate
-%     percent
-%d    percentual difference
-&     bitwise AND
-|     bitwise OR
-x     bitwise XOR
-V     pull root (2nd if stack==1)
-m     median
-a     average
-
+Configure:                                Available operators:
+ d    toggle debugging (-d)                (    enter collect mode
+ S    toggle display of stack (-n)         )    leave collect mode
+                                           +     add
+Stack Management:                          -     substract
+ s    show the stack                       /     divide
+ sa   show the whole stack                 *     multiply
+ cx   clear X (last stack element)         ^     expotentiate
+ c    clear stack                          %     percent
+ rs   reverse the stack                    %d    percentual difference
+ Rs   rotate the stack                     &     bitwise AND
+                                           |     bitwise OR
+Various Commands                           x     bitwise XOR
+ u    undo last operation                  V     pull root (2nd if stack==1)
+ h    show history of past operations      m     median
+ q    finish (C-d works as well)           a     average
+ ?    print help
 ~;
 }
