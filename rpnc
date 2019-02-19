@@ -12,7 +12,7 @@ my $term      = Term::ReadLine->new('rpn calc');
 my $debug     = 0;
 my $showstack = 1;
 my $tty       = 1;
-my $VERSION   = '1.02';
+my $VERSION   = '1.03dev';
 my $sub       = 0;
 my $op;
 
@@ -60,10 +60,11 @@ my %commands = (
                 '?' => sub { help(); },
                 s   => sub { dumpstack(); },
                 c   => sub { clearstack(); },
+                cx  => sub { clearstack(1); dumpstack(); },
                 d   => sub { $debug ^= 1; },
                 u   => sub { undo(); dumpstack(); },
-                r   => sub { reversestack(); },
-                R   => sub { rotatestack(); },
+                rs  => sub { reversestack(); },
+                Rs  => sub { rotatestack(); },
                 h   => sub { showhist(); },
                 '(' => sub { $sub = 1 },
                 ')' => sub { $sub = 0 },
@@ -75,16 +76,28 @@ my %alias   = qw(^ ** x ^ < << > >> + + - - / / * * & & | |);
 # hand coded functions
 my %func    = (
                '%' => sub {
-                       if (scalar @_ == 2) {
-                         my ($a, $b) = @_;
-                         return "($a / 100) * $b";
-                       }
-                       else {
-                         print "percent only possible with 2 values\n";
-                         undo();
-                         return 0;
-                       }
-                     },
+                 if (scalar @_ == 2) {
+                   my ($a, $b) = @_;
+                   return "($a / 100) * $b";
+                 }
+                 else {
+                   print "percent only possible with 2 values\n";
+                   undo();
+                   return 0;
+                 }
+               },
+               '%d' => sub {
+                 # percentual difference
+                 if (scalar @_ == 2) {
+                   my ($a, $b) = @_;
+                   return "(($a - $b) / $b) * 100"
+                 }
+                 else {
+                   print "percent only possible with 2 values\n";
+                   undo();
+                   return 0;
+                 }
+               },
                'V' => sub {
                  if (scalar @_ == 2) {
                    my ($a, $b) = @_;
@@ -99,6 +112,28 @@ my %func    = (
                  # parallel resistance, maybe add ~/.rpncrc support
                  # where to add such custom functions...
                  return "1 / (" . join(' + ', map { "1 / $_"} @_) . ")";
+               },
+               'm' => sub {
+                 # median
+                 if (scalar @_ >= 2) {
+                   my $c = $#_;
+                   if (scalar @_ % 2 == 0) {
+                     # even
+                     return "((sort qw(@_))[$c / 2] + (sort qw(@_))[($c / 2) + 1]) / 2";
+                   }
+                   else {
+                     # uneven
+                     return "(sort qw(@_))[$c / 2]";
+                   }
+                 }
+                 else {
+                   print "median only possible with 2 or more values\n";
+                   undo(); return 0;
+                 }
+               },
+               'a' => sub {
+                 # average
+                 return "(" . join(' + ', @_) . ") / " . scalar @_;
                }
               );
 
@@ -140,11 +175,25 @@ sub showhist {
 }
 
 sub clearstack {
+  my $one = shift;
+
+  backup();
+
   if ($sub) {
-    @substack = ();
+    if ($one) {
+      pop @substack;
+    }
+    else {
+      @substack = ();
+    }
   }
   else {
-    @stack = ();
+    if ($one) {
+      pop @stack;
+    }
+    else {
+      @stack = ();
+    }
   }
 }
 
@@ -334,11 +383,12 @@ If <operator> is provided, read numbers from STDIN,
 otherwise runs interactively.
 
 Available commands:
+cx   clear X (last stack element)
 c    clear stack
 s    show the stack
 d    toggle debugging (current setting: $debug)
-r    reverse the stack
-R    rotate the stack
+rs   reverse the stack
+Rs   rotate the stack
 (    enter collect mode
 )    leave collect mode
 u    undo last operation
@@ -353,10 +403,13 @@ Available operators:
 *     multiply
 ^     expotentiate
 %     percent
+%d    percentual difference
 &     bitwise AND
 |     bitwise OR
 x     bitwise XOR
 V     pull root (2nd if stack==1)
+m     median
+a     average
 
 ~;
 }
