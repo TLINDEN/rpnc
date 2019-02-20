@@ -7,13 +7,15 @@ use Getopt::Long;
 use strict;
 use warnings;
 
-my (@stack, @substack, @backup, @subbackup, @hist);
+my (@stack, @substack, @backup, @subbackup, @hist, @register);
 my $term      = Term::ReadLine->new('rpn calc');
 my $debug     = 0;
 my $showstack = 1;
 my $tty       = 1;
-my $VERSION   = '1.04';
+my $VERSION   = '1.05';
 my $sub       = 0;
+my $maxstack  = 10;
+my $maxreg    = 5;
 my $op;
 
 my ($o_h, $o_v, $o_s);
@@ -56,20 +58,28 @@ if ($op) {
 
 # management commands, always lower case letters or words
 my %commands = (
-                q   => sub { exit; },
-                '?' => sub { help(); },
+                # stack commands
                 s   => sub { dumpstack(); },
                 sa  => sub { dumpstack(1); },
-                c   => sub { clearstack(); },
-                cx  => sub { clearstack(1); dumpstack(); },
-                d   => sub { $debug ^= 1; },
-                sd  => sub { $showstack ^= 1; },
-                u   => sub { undo(); dumpstack(); },
+                sc  => sub { clearstack(); },
+                scx => sub { clearstack(1); dumpstack(); },
                 sr  => sub { reversestack(); },
-                st  => sub { rotatestack(); },
-                h   => sub { showhist(); },
+                srt => sub { rotatestack(); },
+                # collector
                 '(' => sub { $sub = 1 },
                 ')' => sub { $sub = 0 },
+                # register stuff
+                r   => sub { last_to_reg(); dumpstack(); },
+                rcx => sub { clearreg(1); dumpstack(); },
+                rc  => sub { clearreg(); },
+                # main
+                '?' => sub { help(); },
+                u   => sub { undo(); dumpstack(); },
+                h   => sub { showhist(); },
+                q   => sub { exit; },
+                # toggles
+                td  => sub { $debug ^= 1; },
+                ts  => sub { $showstack ^= 1; },
                );
 
 # executed 1:1, or aliased
@@ -149,7 +159,19 @@ while ( defined ($_ = $term->readline(prompt())) ) {
   foreach my $tok (split /\s+/) {
     if ($tok =~ /^-?[A-Z\.\d]+?$/) {
       # number
-      pushstack($tok);
+      if ($tok =~ /^R(\d+?)/) {
+        my $r = getreg($1);
+        if ($r) {
+          pushstack($r);
+        }
+        else {
+          print "invalid register index!\n";
+          next;
+        }
+      }
+      else {
+        pushstack($tok);
+      }
       dumpstack();
     }
     else {
@@ -245,6 +267,7 @@ sub pushstack {
 
 sub dumpstack {
   return unless $showstack;
+
   my $max    = shift;
   my $x      = ' ';
   my $prefix = 'stack';
@@ -259,18 +282,25 @@ sub dumpstack {
   }
 
   my $abs = scalar @all;
-  if (! $max && $abs > 10) {
-    @all = @all[-10 .. -1];
+  if (! $max && $abs > $maxstack) {
+    my $min = $max - ($max * 2);
+    @all = @all[$min .. -1];
     printf "%s    [..]\n", $prefix;
   }
 
-  my $p = scalar @all;
+  if (@register) {
+    my $p = scalar @register;
+    foreach my $n (@register) {
+      printf "register  R%d: %s\n", $p--, $n;
+    }
+  }
+  print "\n";
 
+  my $p = scalar @all;
   foreach my $n (@all) {
     $x = 'X' if($p == 1);
     printf "%s %s %4d: %s\n", $prefix, $x, $p--, $n;
   }
-
   print "\n";
 }
 
@@ -314,6 +344,49 @@ sub getlast {
   }
 
   return @all;
+}
+
+sub getreg {
+  my $n = shift;
+  print scalar @register;
+  if (scalar @register <= $n) {
+    return $register[$n-1];
+  }
+  else {
+    return 0;
+  }
+}
+
+sub last_to_reg {
+  my $n;
+  if ($sub) {
+    if (@substack) {
+      $n = $substack[-1];
+    }
+  }
+  else {
+    if (@stack) {
+      $n = $stack[-1];
+    }
+  }
+
+  if ($n) {
+    if (scalar @register == $maxreg) {
+      shift @register;
+    }
+    push @register, $n;
+  }
+}
+
+sub clearreg {
+  my $one = shift;
+
+  if ($one) {
+    pop @register;
+  }
+  else {
+    @register = ();
+  }
 }
 
 sub prompt {
@@ -398,22 +471,27 @@ Commandline: rpn [-d] [<operator>]
 If <operator> is provided, read numbers from STDIN,
 otherwise runs interactively.
 
-Configure:                                Available operators:
- d    toggle debugging (-d)                (    enter collect mode
- sd   toggle display of stack (-n)         )    leave collect mode
+Configure:                                Available math operators:
+ td   toggle debugging (-d)                (    enter collect mode
+ ts   toggle display of stack (-n)         )    leave collect mode
                                            +    add
 Stack Management:                          -    substract
  s    show the stack                       /    divide
  sa   show the whole stack                 *    multiply
- cx   clear X (last stack element)         ^    expotentiate
- c    clear stack                          %    percent
+ scx  clear X (last stack element)         ^    expotentiate
+ sc   clear stack                          %    percent
  sr   reverse the stack                    %d   percentual difference
- st   rotate the stack                     &    bitwise AND
+ srt  rotate the stack                     &    bitwise AND
                                            |    bitwise OR
-Various Commands                           x    bitwise XOR
- u    undo last operation                  v    pull root (2nd if stack==1)
- h    show history of past operations      m    median
- q    finish (C-d works as well)           a    average
+Register Management:                       x    bitwise XOR
+ r    put X to register                    v    pull root (2nd if stack==1)
+ rcx  clear X (last register element)      m    median
+ rc   clear register                       a    average
+
+Various Commands                          Constants: PI V2 V3
+ u    undo last operation
+ h    show history of past operations     Using register:
+ q    finish (C-d works as well)             enter R + index, e.g. R1
  ?    print help
 ~;
 }
