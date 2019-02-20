@@ -12,7 +12,7 @@ my $term      = Term::ReadLine->new('rpn calc');
 my $debug     = 0;
 my $showstack = 1;
 my $tty       = 1;
-my $VERSION   = '1.03';
+my $VERSION   = '1.04';
 my $sub       = 0;
 my $op;
 
@@ -54,7 +54,7 @@ if ($op) {
   exit;
 }
 
-# management commands
+# management commands, always lower case letters or words
 my %commands = (
                 q   => sub { exit; },
                 '?' => sub { help(); },
@@ -63,10 +63,10 @@ my %commands = (
                 c   => sub { clearstack(); },
                 cx  => sub { clearstack(1); dumpstack(); },
                 d   => sub { $debug ^= 1; },
-                S   => sub { $showstack ^= 1; },
+                sd  => sub { $showstack ^= 1; },
                 u   => sub { undo(); dumpstack(); },
-                rs  => sub { reversestack(); },
-                Rs  => sub { rotatestack(); },
+                sr  => sub { reversestack(); },
+                st  => sub { rotatestack(); },
                 h   => sub { showhist(); },
                 '(' => sub { $sub = 1 },
                 ')' => sub { $sub = 0 },
@@ -100,7 +100,7 @@ my %func    = (
                    return 0;
                  }
                },
-               'V' => sub {
+               'v' => sub {
                  if (scalar @_ == 2) {
                    my ($a, $b) = @_;
                    return "$a ** (1 / $b)";
@@ -139,10 +139,15 @@ my %func    = (
                }
               );
 
+# math constants, always upper case letters, usable via eval{}
+use constant PI => 3.141592653589793;
+use constant V2 => 1.414213562373095;
+use constant V3 => 1.732050807568877;
+
 my $OUT = $term->OUT || \*STDOUT;
 while ( defined ($_ = $term->readline(prompt())) ) {
   foreach my $tok (split /\s+/) {
-    if ($tok =~ /^-?[\.\d]+?$/) {
+    if ($tok =~ /^-?[A-Z\.\d]+?$/) {
       # number
       pushstack($tok);
       dumpstack();
@@ -395,20 +400,20 @@ otherwise runs interactively.
 
 Configure:                                Available operators:
  d    toggle debugging (-d)                (    enter collect mode
- S    toggle display of stack (-n)         )    leave collect mode
-                                           +     add
-Stack Management:                          -     substract
- s    show the stack                       /     divide
- sa   show the whole stack                 *     multiply
- cx   clear X (last stack element)         ^     expotentiate
- c    clear stack                          %     percent
- rs   reverse the stack                    %d    percentual difference
- Rs   rotate the stack                     &     bitwise AND
-                                           |     bitwise OR
-Various Commands                           x     bitwise XOR
- u    undo last operation                  V     pull root (2nd if stack==1)
- h    show history of past operations      m     median
- q    finish (C-d works as well)           a     average
+ sd   toggle display of stack (-n)         )    leave collect mode
+                                           +    add
+Stack Management:                          -    substract
+ s    show the stack                       /    divide
+ sa   show the whole stack                 *    multiply
+ cx   clear X (last stack element)         ^    expotentiate
+ c    clear stack                          %    percent
+ sr   reverse the stack                    %d   percentual difference
+ st   rotate the stack                     &    bitwise AND
+                                           |    bitwise OR
+Various Commands                           x    bitwise XOR
+ u    undo last operation                  v    pull root (2nd if stack==1)
+ h    show history of past operations      m    median
+ q    finish (C-d works as well)           a    average
  ?    print help
 ~;
 }
