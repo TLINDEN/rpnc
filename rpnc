@@ -12,7 +12,7 @@ my $term      = Term::ReadLine->new('rpn calc');
 my $debug     = 0;
 my $showstack = 1;
 my $tty       = 1;
-my $VERSION   = '1.05';
+my $VERSION   = '1.06';
 my $sub       = 0;
 my $maxstack  = 10;
 my $maxreg    = 5;
@@ -88,6 +88,7 @@ my %alias   = qw(^ ** x ^ < << > >> + + - - / / * * & & | |);
 # hand coded functions
 my %func    = (
                '%' => sub {
+                 # X % of Y
                  if (scalar @_ == 2) {
                    my ($a, $b) = @_;
                    return "($a / 100) * $b";
@@ -103,6 +104,30 @@ my %func    = (
                  if (scalar @_ == 2) {
                    my ($a, $b) = @_;
                    return "(($a - $b) / $b) * 100"
+                 }
+                 else {
+                   print "percent only possible with 2 values\n";
+                   undo();
+                   return 0;
+                 }
+               },
+               '%+' => sub {
+                 # Y + (X $ of Y)
+                 if (scalar @_ == 2) {
+                   my ($a, $b) = @_;
+                   return "$a + (($a / 100) * $b)";
+                 }
+                 else {
+                   print "percent only possible with 2 values\n";
+                   undo();
+                   return 0;
+                 }
+               },
+               '%-' => sub {
+                 # Y - (X $ of Y)
+                 if (scalar @_ == 2) {
+                   my ($a, $b) = @_;
+                   return "$a - (($a / 100) * $b)";
                  }
                  else {
                    print "percent only possible with 2 values\n";
@@ -289,9 +314,9 @@ sub dumpstack {
   }
 
   if (@register) {
-    my $p = scalar @register;
+    my $p = 1;
     foreach my $n (@register) {
-      printf "register  R%d: %s\n", $p--, $n;
+      printf "register  R%d: %s\n", $p++, $n;
     }
   }
   print "\n";
@@ -348,8 +373,7 @@ sub getlast {
 
 sub getreg {
   my $n = shift;
-  print scalar @register;
-  if (scalar @register <= $n) {
+  if ($n <= scalar @register) {
     return $register[$n-1];
   }
   else {
@@ -479,7 +503,7 @@ Stack Management:                          -    substract
  s    show the stack                       /    divide
  sa   show the whole stack                 *    multiply
  scx  clear X (last stack element)         ^    expotentiate
- sc   clear stack                          %    percent
+ sc   clear stack                          %    percent (%+  add %- substract)
  sr   reverse the stack                    %d   percentual difference
  srt  rotate the stack                     &    bitwise AND
                                            |    bitwise OR
