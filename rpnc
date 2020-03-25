@@ -12,7 +12,7 @@ my $term      = Term::ReadLine->new('rpn calc');
 my $debug     = 0;
 my $showstack = 1;
 my $tty       = 1;
-my $VERSION   = '1.06';
+my $VERSION   = '1.07';
 my $sub       = 0;
 my $maxstack  = 10;
 my $maxreg    = 5;
@@ -171,7 +171,21 @@ my %func    = (
                'a' => sub {
                  # average
                  return "(" . join(' + ', @_) . ") / " . scalar @_;
-               }
+               },
+               # converters:
+               # gallons to liters
+               'tl' => sub { return $_[0] * 3.785 },
+               # yards to meters
+               'tm' => sub { return $_[0] * 91.44 },
+               # miles to kilometers
+               'tk' => sub { return $_[0] * 1.609 },
+               # inches to cm
+               'tc' => sub { return $_[0] * 2.54 },
+               # to 'bytes
+               'tkb' => sub { return $_[0] / 1000 },
+               'tmb' => sub { return $_[0] / 1000 / 1000},
+               'tgb' => sub { return $_[0] / 1000 / 1000 / 1000 },
+               'ttb' => sub { return $_[0] / 1000 / 1000 / 1000 / 1000 },
               );
 
 # math constants, always upper case letters, usable via eval{}
@@ -511,6 +525,12 @@ Register Management:                       x    bitwise XOR
  r    put X to register                    v    pull root (2nd if stack==1)
  rcx  clear X (last register element)      m    median
  rc   clear register                       a    average
+
+Converters:
+ tl   gallons => liters                    tkb  bytes => kb
+ tk   miles   => kilometers                tmb  bytes => mb
+ tm   yards   => meters                    tgb  bytes => gb
+ tc   inches => centimeters                ttb  bytes => tb
 
 Various Commands                          Constants: PI V2 V3
  u    undo last operation
