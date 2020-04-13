@@ -136,6 +136,31 @@ sub stack of before.
 Every operation which  modifies the stack can be  reversed by entering
 the <kbd>u</kbd> command. There's only one level of undo and no redo.
 
+## Functions
+
+You can define functions anytime directly on the cli or in a file called
+`~/.rpnc`. A function has a name (which must not collide with existing
+functions and commands) and a body of commands.
+
+Example:
+
+    f res2vcc 1.22 R1 R2 + R2 / 1 + *
+
+Which calculates:
+
+    (((R1 + R2) / R2) + 1) * 1.22 = ??
+    
+To use it later, just enter the variables into the stack followed by the
+function name:
+
+    470
+    220
+    res2vcc
+
+You  can  also  put  the   function  definition  in  the  config  file
+`~/.rpnc`. Empty lines and lines beginning with `#` will be ignored.
+
+
 ## Using STDIN via a PIPE
 
 If the commandline  includes any operator, commands will  be read from
@@ -150,18 +175,22 @@ Examples:
     
 Both commands will print 4 to STDOUT.
 
+
 ## Complete list of all supported commands:
 
-* <kbd>c</kbd>    clear stack
+### Stack Management
+
 * <kbd>s</kbd>    show the stack
-* <kbd>d</kbd>    toggle debugging (current setting: 0)
-* <kbd>r</kbd>    reverse the stack
-* <kbd>R</kbd>    rotate the stack
-* <kbd>(</kbd>    enter collect mode
-* <kbd>)</kbd>    leave collect mode
-* <kbd>u</kbd>    undo last operation
-* <kbd>q</kbd>    finish (<kbd>C-d</kbd> works as well)
-* <kbd>?</kbd>    print help
+* <kbd>ss</kbd>    show the whole stack
+* <kbd>sc</kbd>    clear stack
+* <kbd>scx</kbd>   clear last stack element
+* <kbd>sr</kbd>    reverse the stack
+* <kbd>srt</kbd>    rotate the stack
+
+## Configuration
+
+* <kbd>td</kbd>    toggle debugging (-d)
+* <kbd>ts</kbd>    toggle display of the stack (-n)
 
 ## Supported mathematical operators:
 
@@ -171,10 +200,47 @@ Both commands will print 4 to STDOUT.
 * <kbd>*</kbd>     multiply
 * <kbd>^</kbd>     expotentiate
 * <kbd>%</kbd>     percent
+* <kbd>%+</kbd>     add percent
+* <kbd>%-</kbd>     substract percent
+* <kbd>%d</kbd>     percentual difference
 * <kbd>&</kbd>     bitwise AND
 * <kbd>|</kbd>     bitwise OR
 * <kbd>x</kbd>     bitwise XOR
-* <kbd>V</kbd>     pull root (2nd if stack==1)
+* <kbd>m</kbd>     median
+* <kbd>a</kbd>     average
+* <kbd>v</kbd>     pull root (2nd if stack==1)
+* <kbd>(</kbd>    enter collect mode
+* <kbd>)</kbd>    leave collect mode
+
+## Register Commands
+
+* <kbd>r</kbd>    put element into register
+* <kbd>rc</kbd>   clear register
+* <kbd>rcx</kbd>  clear last register element
+
+## Various Commands
+
+* <kbd>u</kbd>    undo last operation
+* <kbd>q</kbd>    finish (<kbd>C-d</kbd> works as well)
+* <kbd>h</kbd>    show history of past operations
+* <kbd>?</kbd>    print help
+
+## Converters
+
+* <kbd>tl</kbd> gallons to liters
+* <kbd>tk</kbd> miles to kilometers
+* <kbd>tm</kbd> yards to meters
+* <kbd>tc</kbd> inches to centimeters
+* <kbd>tkb</kbd> bytes to kilobytes
+* <kbd>tmb</kbd> bytes to megabytes
+* <kbd>tgb</kbd> bytes to gigabytes
+* <kbd>ttb</kbd> bytes to terabytes
+
+## Function Comands
+
+* <kbd>f NAME CODE</kbd>  define a functions (see ab above)
+* <kbd>fs</kbd>   show list of defined functions
+
 
 ## Copyleft
 
