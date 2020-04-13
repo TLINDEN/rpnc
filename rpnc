@@ -556,14 +556,17 @@ sub defun {
     return;
   }
 
-  if (grep {$name eq $_} keys %commands) {
-    print "reserved function name (command)!\n";
-    return;
-  }
+  if (! exists $custom{$name}) {
+    # no need to check twice and overwriting of custom function must be legal
+    if (grep {$name eq $_} keys %commands) {
+      print "reserved function name (command)!\n";
+      return;
+    }
 
-  if (grep {$name eq $_} keys %func) {
-    print "reserved function name (function)!\n";
-    return;
+    if (grep {$name eq $_} keys %func) {
+      print "reserved function name (function)!\n";
+      return;
+    }
   }
 
   $custom{$name} = "@tokens";
