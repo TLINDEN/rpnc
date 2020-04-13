@@ -13,10 +13,11 @@ my $term      = Term::ReadLine->new('rpn calc');
 my $debug     = 0;
 my $showstack = 1;
 my $tty       = 1;
-my $VERSION   = '1.07';
+my $VERSION   = '1.08';
 my $sub       = 0;
 my $maxstack  = 10;
 my $maxreg    = 5;
+my $silent    = 1;
 my $op;
 
 my ($o_h, $o_v, $o_s);
@@ -81,10 +82,15 @@ my %commands = (
                 # toggles
                 td  => sub { $debug ^= 1; },
                 ts  => sub { $showstack ^= 1; },
+                # functions
+                fs  => sub { showfuncs(); },
                );
 
 # executed 1:1, or aliased
 my %alias   = qw(^ ** x ^ < << > >> + + - - / / * * & & | |);
+
+# holds user functions
+my %custom;
 
 # hand coded functions
 my %func    = (
@@ -194,32 +200,62 @@ use constant PI => 3.141592653589793;
 use constant V2 => 1.414213562373095;
 use constant V3 => 1.732050807568877;
 
+# load config, if any
+if (-s "$ENV{HOME}/.rpnc") {
+  if (open RC, "< $ENV{HOME}/.rpnc") {
+    while (<RC>) {
+      chomp();
+      next if (/^\s*#/ || /^\s*$/);
+      looptokenize($_);
+    }
+    close RC;
+    $silent = 0;
+  }
+}
+
+# main
 my $OUT = $term->OUT || \*STDOUT;
 while ( defined ($_ = $term->readline(prompt())) ) {
-  foreach my $tok (split /\s+/) {
-    if ($tok =~ /^-?[A-Z\.\d]+?$/) {
-      # number
-      if ($tok =~ /^R(\d+?)/) {
-        my $r = getreg($1);
-        if ($r) {
-          pushstack($r);
+  looptokenize($_);
+}
+
+
+1;
+
+
+sub looptokenize {
+  # does the actual business
+  my $tokens = shift;
+
+  if ($tokens =~ /^f\s/) {
+    defun($tokens);
+  }
+  else {
+    foreach my $tok (split /\s+/, $tokens) {
+      if ($tok =~ /^-?[A-Z\.\d]+?$/) {
+        # number
+        if ($tok =~ /^R(\d+?)/) {
+          my $r = getreg($1);
+          if ($r) {
+            pushstack($r);
+          }
+          else {
+            print "invalid register index!\n";
+            next;
+          }
         }
         else {
-          print "invalid register index!\n";
-          next;
+          pushstack($tok);
         }
+        dumpstack();
       }
       else {
-        pushstack($tok);
-      }
-      dumpstack();
-    }
-    else {
-      if (exists $commands{$tok}) {
-        cmd($tok);
-      }
-      else {
-        print calc($tok);
+        if (exists $commands{$tok}) {
+          cmd($tok);
+        }
+        else {
+          print calc($tok);
+        }
       }
     }
   }
@@ -499,10 +535,52 @@ sub calc {
 }
 
 
+sub defun {
+  # define a function, use N1 .. NN as function arguments
+  my $code = shift;
+  my ($op, $name, @tokens) = split /\s\s*/, $code;
+
+  $custom{$name} = "@tokens";
+
+  $func{$name} = sub {
+    my $max = scalar @_;
+    my @args = reverse(@_);
+
+    # replace N1..NN with actual args
+    my @body;
+    foreach my $item (@tokens) {
+      if ($item =~ /^N(\d+)$/) {
+        my $i = $1;
+        if ($i <= $max) {
+          push @body, $args[$i-1];
+        }
+        else {
+          print "undefined variable N$i!\n";
+          push @body, 0;
+        }
+      }
+      else {
+        push @body, $item;
+      }
+    }
+
+    # execute @body
+    looptokenize("@body");
+  };
+
+  print "function $name() defined.\n" unless $silent;
+}
+
+sub showfuncs {
+  foreach my $f (sort keys %custom) {
+    print "Function $f():\n   $custom{$f}\n\n";
+  }
+}
+
 sub help {
   print qq~
 Reverse Polish Notation Calculator, version $VERSION.
-Copyleft (L) 2019 - Thomas von Dein.
+Copyleft (L) 2019-2020 - Thomas von Dein.
 Licensed under the terms of the GPL 3.0.
 
 Commandline: rpn [-d] [<operator>]
@@ -533,10 +611,10 @@ Converters:
  tm   yards   => meters                    tgb  bytes => gb
  tc   inches => centimeters                ttb  bytes => tb
 
-Various Commands                          Constants: PI V2 V3
- u    undo last operation
- h    show history of past operations     Using register:
- q    finish (C-d works as well)             enter R + index, e.g. R1
- ?    print help
+Various Commands:                         Functions:
+ u    undo last operation                 f     <name> op op... (use N1..NN for stack)
+ h    show history of past operations     fs    show list of defined functions
+ q    finish (C-d works as well)          Using register: enter R + index, e.g. R1
+ ?    print help                          Constants: PI V2 V3
 ~;
 }
