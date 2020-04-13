@@ -156,9 +156,25 @@ function name:
     470
     220
     res2vcc
+    => 2.79
 
 You  can  also  put  the   function  definition  in  the  config  file
 `~/.rpnc`. Empty lines and lines beginning with `#` will be ignored.
+
+Another way  to define a  function is to  use perl code  directly. The
+perl code must  be a closure string and surrounded  by braces. You can
+access the stack via `@_`.  Here's an example:
+
+    f pr { return "1.0 / (" . join(' + ', map { "1.0 / $_"} @_) . ")" }
+    
+This  function  calculates the  parallel  resistance  of a  number  of
+resistors. It adds up all values from the stack. Usage:
+
+    22
+    47
+    330
+    pr
+    => 41.14
 
 
 ## Using STDIN via a PIPE

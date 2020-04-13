@@ -157,12 +157,6 @@ my %func    = (
                  }
                },
 
-               'pr' => sub {
-                 # parallel resistance, maybe add ~/.rpncrc support
-                 # where to add such custom functions...
-                 return "1 / (" . join(' + ', map { "1 / $_"} @_) . ")";
-               },
-
                'm' => sub {
                  # median
                  if (scalar @_ >= 2) {
@@ -571,32 +565,39 @@ sub defun {
 
   $custom{$name} = "@tokens";
 
-  $func{$name} = sub {
-    my $max = scalar @_;
-    my @args = reverse(@_);
+  if ($custom{$name} =~ /^\{.*\}$/) {
+    # perl code
+    $func{$name} = sub { return eval "@tokens" };
+  }
+  else {
+    # rpnc code
+    $func{$name} = sub {
+      my $max = scalar @_;
+      my @args = reverse(@_);
 
-    # replace N1..NN with actual args
-    my @body;
-    foreach my $item (@tokens) {
-      if ($item =~ /^([A-Z])(\d+)$/) {
-        my $letter = $1;
-        my $i = $2;
-        if ($i <= $max) {
-          push @body, $args[$i-1];
+      # replace N1..NN with actual stack items
+      my @body;
+      foreach my $item (@tokens) {
+        if ($item =~ /^([A-Z])(\d+)$/) {
+          my $letter = $1;
+          my $i = $2;
+          if ($i <= $max) {
+            push @body, $args[$i-1];
+          }
+          else {
+            print "undefined variable ${letter}${i}!\n";
+            push @body, 0;
+          }
         }
         else {
-          print "undefined variable ${letter}${i}!\n";
-          push @body, 0;
+          push @body, $item;
         }
       }
-      else {
-        push @body, $item;
-      }
-    }
 
-    # execute @body
-    looptokenize("@body");
-  };
+      # execute @body
+      looptokenize("@body");
+    };
+  }
 
   print "function $name() defined.\n" unless $silent;
 }
@@ -646,5 +647,6 @@ Various Commands:                         Functions:
  h    show history of past operations     fs    show list of defined functions
  q    finish (C-d works as well)          Using register: enter R + index, e.g. R1
  ?    print help                          Constants: PI V2 V3
+
 ~;
 }
