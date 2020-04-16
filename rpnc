@@ -12,8 +12,9 @@ my (@stack, @substack, @backup, @subbackup, @hist, @register);
 my $term      = Term::ReadLine->new('rpn calc');
 my $debug     = 0;
 my $showstack = 1;
+my $mgt       = 0;
 my $tty       = 1;
-my $VERSION   = '1.08';
+my $VERSION   = '1.09';
 my $sub       = 0;
 my $maxstack  = 10;
 my $maxreg    = 5;
@@ -61,8 +62,8 @@ if ($op) {
 # management commands, always lower case letters or words
 my %commands = (
                 # stack commands
-                s   => sub { dumpstack(); },
-                sa  => sub { dumpstack(1); },
+                s   => sub { $mgt = 1; dumpstack(); $mgt = 0; },
+                sa  => sub { $mgt = 1; dumpstack(1); $mgt = 0;},
                 sc  => sub { clearstack(); },
                 scx => sub { clearstack(1); dumpstack(); },
                 sr  => sub { reversestack(); },
@@ -92,112 +93,128 @@ my %alias   = qw(^ ** x ^ < << > >> + + - - / / * * & & | |);
 # holds user functions
 my %custom;
 
+# converter helper
+sub convert {
+  my $code = shift;
+  my ($a) = getlast(1);
+  if (defined $a) {
+    return "$a $code";
+  }
+}
+
 # hand coded functions
 my %func    = (
                '%' => sub {
                  # X % of Y
-                 if (scalar @_ == 2) {
-                   my ($a, $b) = @_;
+                 my ($a, $b) = getlast(2);
+                 if (defined $b) {
                    return "($a / 100) * $b";
-                 }
-                 else {
-                   print "percent only possible with 2 values\n";
-                   undo();
-                   return 0;
                  }
                },
 
                '%d' => sub {
                  # percentual difference
-                 if (scalar @_ == 2) {
-                   my ($a, $b) = @_;
+                 my ($a, $b) = getlast(2);
+                 if (defined $b) {
                    return "(($a - $b) / $b) * 100"
-                 }
-                 else {
-                   print "percent only possible with 2 values\n";
-                   undo();
-                   return 0;
                  }
                },
 
                '%+' => sub {
                  # Y + (X $ of Y)
-                 if (scalar @_ == 2) {
-                   my ($a, $b) = @_;
+                 my ($a, $b) = getlast(2);
+                 if (defined $b) {
                    return "$a + (($a / 100) * $b)";
-                 }
-                 else {
-                   print "percent only possible with 2 values\n";
-                   undo();
-                   return 0;
                  }
                },
 
                '%-' => sub {
                  # Y - (X $ of Y)
-                 if (scalar @_ == 2) {
-                   my ($a, $b) = @_;
+                 my ($a, $b) = getlast(2);
+                 if (defined $b) {
                    return "$a - (($a / 100) * $b)";
-                 }
-                 else {
-                   print "percent only possible with 2 values\n";
-                   undo();
-                   return 0;
                  }
                },
 
                'v' => sub {
-                 if (scalar @_ == 2) {
-                   my ($a, $b) = @_;
-                   return "$a ** (1 / $b)";
-                 }
-                 else {
-                   my $a = pop @_;
+                 # square root
+                 my ($a) = getlast(1);
+                 if (defined $a) {
                    return "$a ** (1 / 2)";
                  }
                },
 
                'm' => sub {
                  # median
-                 if (scalar @_ >= 2) {
-                   my $c = $#_;
-                   if (scalar @_ % 2 == 0) {
+                 my @values = getlast(2); # we need 2 or all in sub mode
+                 if (scalar @values >= 2) {
+                   my $c = $#values;
+                   if (scalar @values % 2 == 0) {
                      # even
-                     return "((sort qw(@_))[$c / 2] + (sort qw(@_))[($c / 2) + 1]) / 2";
+                     return "((sort qw(@values))[$c / 2] + (sort qw(@values))[($c / 2) + 1]) / 2";
                    }
                    else {
                      # uneven
-                     return "(sort qw(@_))[$c / 2]";
+                     return "(sort qw(@values))[$c / 2]";
                    }
                  }
                  else {
                    print "median only possible with 2 or more values\n";
-                   undo(); return 0;
+                   undo();
+                   return 0;
                  }
                },
 
                'a' => sub {
                  # average
-                 return "(" . join(' + ', @_) . ") / " . scalar @_;
+                 my @values = getlast(2); # we need 2 or all in sub mode
+                 if (scalar @values > 1) {
+                   return "(" . join(' + ', @values) . ") / " . scalar @values;
+                 }
+                 else {
+                   print "average only possible with 2 or more values\n";
+                   undo();
+                   return 0;
+                 }
                },
 
+               'x' => sub {
+                 # XOR
+                 my ($a, $b) = getlast(2);
+                 if (defined $b) {
+                   return "$a ^ $b";
+                 }
+               },
+
+               '|'  => sub {
+                 # OR
+                 my ($a, $b) = getlast(2);
+                 if (defined $b) {
+                   return "$a | $b";
+                 }
+               },
+
+               '|'  => sub {
+                 # XOR
+                 my ($a, $b) = getlast(2);
+                 if (defined $b) {
+                   return "$a ^ $b";
+                 }
+               },
                # converters:
                # gallons to liters
-               'tl' => sub { return $_[-1] * 3.785 },
+               'tl' => sub { return convert("* 3.785") },
                # yards to meters
-               'tm' => sub { return $_[-1] * 91.44 },
+               'tm' => sub { return convert("* 91.44") },
                # miles to kilometers
-               'tk' => sub { return $_[-1] * 1.609 },
+               'tk' => sub { return convert("* 1.609") },
                # inches to cm
-               'tc' => sub { return $_[-1] * 2.54 },
+               'tc' => sub { return convert("* 2.54") },
                # to 'bytes
-               'tkb' => sub { return $_[-1] / 1000 },
-               'tmb' => sub { return $_[-1] / 1000 / 1000},
-               'tgb' => sub { return $_[-1] / 1000 / 1000 / 1000 },
-               'ttb' => sub { return $_[-1] / 1000 / 1000 / 1000 / 1000 },
-
-               # alias
-               'x' => sub { return join "^", @_ },
+               'tkb' => sub { return convert("/ 1000") },
+               'tmb' => sub { return convert("/ 1000 / 1000") },
+               'tgb' => sub { return convert("/ 1000 / 1000 / 1000") },
+               'ttb' => sub { return convert("/ 1000 / 1000 / 1000 / 1000") },
               );
 
 # math constants, always upper case letters, usable via eval{}
@@ -347,7 +364,9 @@ sub pushstack {
 }
 
 sub dumpstack {
-  return unless $showstack;
+  if (! $showstack && !$mgt) {
+    return;
+  }
 
   my $max    = shift;
   my $x      = ' ';
@@ -405,22 +424,41 @@ sub backup {
 
 
 sub getlast {
+  # return and remove last 1, 2 or all elements of current stack
+  my $request = shift;
+
   my @all = ();
 
   backup();
 
   if ($sub) {
+    # ignore request count
     @all = @substack;
     @substack = ();
   }
   else {
     if (@stack) {
       if (scalar @stack == 1) {
-        @all = pop @stack;
+        if ($request > 1) {
+          print "At least $request variables must be on the stack!\n";
+          return 0;
+        }
+        else {
+          @all = pop @stack;
+        }
       }
       else {
-        @all = reverse (pop @stack, pop @stack);
+        if ($request == 1) {
+          @all = pop @stack;
+        }
+        else {
+          # return 2 elements, as we do not support more than 2 anyway
+          @all = reverse (pop @stack, pop @stack);
+        }
       }
+    }
+    else {
+      print "Please enter one or more numbers to operate on!\n";
     }
   }
 
@@ -490,52 +528,47 @@ sub calc {
   my $res;
   my $code;
 
-  my @last = getlast();
 
-  if (@last) {
-    if (exists $alias{$op}) {
-      $op = $alias{$op};
-      $code = join(" $op ",  @last);
-    }
-    elsif (exists $func{$op}) {
-      my $sub = $func{$op};
-      $code = &$sub(@last);
-      return unless $code;
-    }
-    else {
-      print "syntax error or unknown command!\n";
-      undo();
-      return;
-    }
-
-    # execute
-    eval "\$res = $code";
-
-    if ($@) {
-      # error, reset stack
-      print "Syntax error: $@, resetting stack\n";
-      undo();
-    }
-    else {
-      push @stack, $res;
-      $sub = 0;
-
-      if ($debug) {
-        print "DEBUG: $code = $res\n";
-      }
-
-      if ($tty) {
-        dumpstack();
-        push @hist, [$res, $code];
-        return "=> $res\n\n";
-      }
-      else {
-        return "$res\n";
-      }
-    }
+  if (exists $alias{$op}) {
+    my @last = getlast(2);
+    $op = $alias{$op};
+    $code = join(" $op ",  @last);
+  }
+  elsif (exists $func{$op}) {
+    my $sub = $func{$op};
+    $code = &$sub();
+    return unless $code;
   }
   else {
+    print "syntax error or unknown command!\n";
+    undo();
     return;
+  }
+
+  # execute
+  eval "\$res = $code";
+
+  if ($@) {
+    # error, reset stack
+    print "Syntax error: $@, resetting stack\n";
+    undo();
+  }
+  else {
+    push @stack, $res;
+    $sub = 0;
+
+    if ($debug) {
+      print "DEBUG: $code = $res\n";
+    }
+
+    if ($tty) {
+      dumpstack();
+      push @hist, [$res, $code];
+      return "=> $res\n\n";
+    }
+    else {
+      return "$res\n";
+    }
   }
 }
 
@@ -632,7 +665,7 @@ Stack Management:                          -    substract
  srt  rotate the stack                     &    bitwise AND
                                            |    bitwise OR
 Register Management:                       x    bitwise XOR
- r    put X to register                    v    pull root (2nd if stack==1)
+ r    put X to register                    v    square root
  rcx  clear X (last register element)      m    median
  rc   clear register                       a    average
 
