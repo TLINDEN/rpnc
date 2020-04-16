@@ -70,7 +70,7 @@ my %commands = (
                 srt => sub { rotatestack(); },
                 # collector
                 '(' => sub { $sub = 1 },
-                ')' => sub { $sub = 0 },
+                ')' => sub { stack2sub(); },
                 # register stuff
                 r   => sub { last_to_reg(); dumpstack(); },
                 rcx => sub { clearreg(1); dumpstack(); },
@@ -178,29 +178,6 @@ my %func    = (
                  }
                },
 
-               'x' => sub {
-                 # XOR
-                 my ($a, $b) = getlast(2);
-                 if (defined $b) {
-                   return "$a ^ $b";
-                 }
-               },
-
-               '|'  => sub {
-                 # OR
-                 my ($a, $b) = getlast(2);
-                 if (defined $b) {
-                   return "$a | $b";
-                 }
-               },
-
-               '|'  => sub {
-                 # XOR
-                 my ($a, $b) = getlast(2);
-                 if (defined $b) {
-                   return "$a ^ $b";
-                 }
-               },
                # converters:
                # gallons to liters
                'tl' => sub { return convert("* 3.785") },
@@ -441,20 +418,13 @@ sub getlast {
       if (scalar @stack == 1) {
         if ($request > 1) {
           print "At least $request variables must be on the stack!\n";
-          return 0;
         }
         else {
           @all = pop @stack;
         }
       }
-      else {
-        if ($request == 1) {
-          @all = pop @stack;
-        }
-        else {
-          # return 2 elements, as we do not support more than 2 anyway
-          @all = reverse (pop @stack, pop @stack);
-        }
+      elsif (scalar @stack >= 2) {
+        @all = splice(@stack, -1 * $request, $request);
       }
     }
     else {
@@ -504,6 +474,20 @@ sub clearreg {
   }
   else {
     @register = ();
+  }
+}
+
+sub stack2sub {
+  if (! $sub && scalar @substack == 0 && scalar @stack > 1) {
+    # not in collector mode, empty substack, move stack to substack, enter collect
+    backup();
+    @substack = @stack;
+    @stack = ();
+    $sub = 1;
+  }
+  else {
+    # leave collector mode
+    $sub = 0;
   }
 }
 
@@ -653,21 +637,22 @@ If <operator> is provided, read numbers from STDIN,
 otherwise runs interactively.
 
 Configure:                                Available math operators:
- td   toggle debugging (-d)                (    enter collect mode
- ts   toggle display of stack (-n)         )    leave collect mode
-                                           +    add
-Stack Management:                          -    substract
- s    show the stack                       /    divide
- sa   show the whole stack                 *    multiply
- scx  clear X (last stack element)         ^    expotentiate
- sc   clear stack                          %    percent (%+  add %- substract)
- sr   reverse the stack                    %d   percentual difference
- srt  rotate the stack                     &    bitwise AND
-                                           |    bitwise OR
-Register Management:                       x    bitwise XOR
- r    put X to register                    v    square root
- rcx  clear X (last register element)      m    median
- rc   clear register                       a    average
+ td   toggle debugging (-d)                (      enter collect mode
+ ts   toggle display of stack (-n)         )      leave collect || stack => collect
+                                           +      add
+Stack Management:                          -      substract
+ s    show the stack                       /      divide
+ sa   show the whole stack                 *      multiply
+ scx  clear X (last stack element)         ^      expotentiate
+ sc   clear stack                          %      percent (%+  add %- substract)
+ sr   reverse the stack                    %d     percentual difference
+ srt  rotate the stack                     &      bitwise AND
+                                           |      bitwise OR
+Register Management:                       x      bitwise XOR
+ r    put X to register                    < >    bitwise shift left or right
+ R1-9 push value of register to stack      v      square root
+ rcx  clear X (last register element)      m      median
+ rc   clear register                       a      average
 
 Converters:
  tl   gallons => liters                    tkb  bytes => kb
