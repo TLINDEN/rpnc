@@ -21,44 +21,6 @@ my $maxreg    = 5;
 my $silent    = 1;
 my $op;
 
-my ($o_h, $o_v, $o_s);
-Getopt::Long::Configure( qw(no_ignore_case));
-if (! GetOptions (
-                  "version|v"          => \$o_v,
-                  "help|h"             => \$o_h,
-                  "debug|d"            => \$debug,
-                  "nostack|n"          => \$o_s
-                 )    ) {
-  help();
-  exit;
-}
-
-if ($o_v) {
-  print "$0 version $VERSION\n";
-  exit;
-}
-
-if ($o_h) {
-  help();
-  exit;
-}
-
-if ($o_s) {
-  $showstack = 0;
-}
-
-$op = shift;
-
-if ($op) {
-  $tty = 0;
-  while (<STDIN>) {
-    chomp;
-    push @stack, split /\s\s*/;
-  }
-  print calc($op);
-  exit;
-}
-
 # management commands, always lower case letters or words
 my %commands = (
                 # stack commands
@@ -92,15 +54,6 @@ my %alias   = qw(^ ** x ^ < << > >> + + - - / / * * & & | |);
 
 # holds user functions
 my %custom;
-
-# converter helper
-sub convert {
-  my $code = shift;
-  my ($a) = getlast(1);
-  if (defined $a) {
-    return "$a $code";
-  }
-}
 
 # hand coded functions
 my %func    = (
@@ -199,6 +152,33 @@ use constant PI => 3.141592653589793;
 use constant V2 => 1.414213562373095;
 use constant V3 => 1.732050807568877;
 
+# handle command line
+my ($o_h, $o_v, $o_s);
+Getopt::Long::Configure( qw(no_ignore_case));
+if (! GetOptions (
+                  "version|v"          => \$o_v,
+                  "help|h"             => \$o_h,
+                  "debug|d"            => \$debug,
+                  "nostack|n"          => \$o_s
+                 )    ) {
+  help();
+  exit;
+}
+
+if ($o_v) {
+  print "$0 version $VERSION\n";
+  exit;
+}
+
+if ($o_h) {
+  help();
+  exit;
+}
+
+if ($o_s) {
+  $showstack = 0;
+}
+
 # load config, if any
 if (-s "$ENV{HOME}/.rpnc") {
   if (open RC, "< $ENV{HOME}/.rpnc") {
@@ -212,6 +192,20 @@ if (-s "$ENV{HOME}/.rpnc") {
   }
 }
 
+
+# run in commandline mode?
+$op = shift;
+if ($op) {
+  $tty = 0;
+  while (<STDIN>) {
+    chomp;
+    push @stack, split /\s\s*/;
+  }
+  print calc($op);
+  exit;
+}
+
+# else: run interactively
 # main
 my $OUT = $term->OUT || \*STDOUT;
 while ( defined ($_ = $term->readline(prompt())) ) {
@@ -222,18 +216,30 @@ while ( defined ($_ = $term->readline(prompt())) ) {
 1;
 
 
+# converter helper
+sub convert {
+  my $code = shift;
+  my ($a) = getlast(1);
+  if (defined $a) {
+    return "$a $code";
+  }
+}
+
+
 sub looptokenize {
-  # does the actual business
+  # disassemble user input into tokens
   my $tokens = shift;
 
   if ($tokens =~ /^f\s/) {
+    # function definition
     defun($tokens);
   }
   else {
     foreach my $tok (split /\s+/, $tokens) {
       if ($tok =~ /^-?[A-Z\.\d]+?$/) {
-        # number
+        # number or register fetch
         if ($tok =~ /^R(\d+?)/) {
+          # fetch number from register $1 and put it to stack
           my $r = getreg($1);
           if ($r) {
             pushstack($r);
@@ -244,11 +250,13 @@ sub looptokenize {
           }
         }
         else {
+          # put number to stsack
           pushstack($tok);
         }
         dumpstack();
       }
       else {
+        # operator or command, execute
         if (exists $commands{$tok}) {
           cmd($tok);
         }
@@ -436,6 +444,7 @@ sub getlast {
 }
 
 sub getreg {
+  # fetch $n'th element from register
   my $n = shift;
   if ($n <= scalar @register) {
     return $register[$n-1];
@@ -446,6 +455,7 @@ sub getreg {
 }
 
 sub last_to_reg {
+  # put last stack element to register
   my $n;
   if ($sub) {
     if (@substack) {
@@ -511,7 +521,6 @@ sub calc {
   my $op = shift;
   my $res;
   my $code;
-
 
   if (exists $alias{$op}) {
     my @last = getlast(2);
