@@ -14,7 +14,7 @@ my $debug     = 0;
 my $showstack = 1;
 my $mgt       = 0;
 my $tty       = 1;
-my $VERSION   = '1.09';
+my $VERSION   = '1.10';
 my $sub       = 0;
 my $maxstack  = 10;
 my $maxreg    = 5;
@@ -533,7 +533,7 @@ sub calc {
     return unless $code;
   }
   else {
-    print "syntax error or unknown command!\n";
+    print "syntax error or unknown command ($op)!\n";
     undo();
     return;
   }
