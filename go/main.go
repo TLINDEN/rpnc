@@ -55,7 +55,7 @@ func main() {
 
 	rl, err := readline.NewEx(&readline.Config{
 		Prompt:            "\033[31m»\033[0m ",
-		HistoryFile:       os.Getenv("HOME") + ".rpn-history",
+		HistoryFile:       os.Getenv("HOME") + "/.rpn-history",
 		HistoryLimit:      500,
 		AutoComplete:      calc.completer,
 		InterruptPrompt:   "^C",

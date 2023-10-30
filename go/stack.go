@@ -55,7 +55,7 @@ func (s *Stack) Pop() float64 {
 	val := tail.Value
 	s.dll.Remove(tail)
 
-	s.Debug(fmt.Sprintf("DEBUG: remove from stack: %.2f", val))
+	s.Debug(fmt.Sprintf("remove from stack: %.2f", val))
 
 	s.Bump()
 	return val.(float64)
@@ -72,7 +72,7 @@ func (s *Stack) Shift() {
 	tail := s.dll.Back()
 	s.dll.Remove(tail)
 
-	s.Debug(fmt.Sprintf("DEBUG: remove from stack: %.2f", tail.Value))
+	s.Debug(fmt.Sprintf("remove from stack: %.2f", tail.Value))
 }
 
 func (s *Stack) Last() float64 {
@@ -129,4 +129,14 @@ func (s *Stack) Restore() {
 
 	s.rev = s.backuprev
 	s.dll = s.backup
+}
+
+func (s *Stack) Reverse() {
+	newstack := list.List{}
+
+	for e := s.dll.Front(); e != nil; e = e.Next() {
+		newstack.PushFront(e.Value)
+	}
+
+	s.dll = newstack
 }
