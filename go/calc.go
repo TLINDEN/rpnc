@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/chzyer/readline"
+	lua "github.com/yuin/gopher-lua"
 )
 
 type Calc struct {
@@ -17,6 +18,7 @@ type Calc struct {
 	stack     *Stack
 	history   []string
 	completer readline.AutoCompleter
+	L         *lua.LState
 }
 
 const Help string = `Available commands:
@@ -34,10 +36,24 @@ basic operators: + - * /
 Math operators:
 ^       power`
 
+// That way I can add custom functions to completion
+func GetCompleteCustomFunctions() func(string) []string {
+	return func(line string) []string {
+		funcs := []string{}
+		for luafunc := range LuaFuncs {
+			funcs = append(funcs, luafunc)
+		}
+		return funcs
+	}
+}
+
 func NewCalc() *Calc {
 	c := Calc{stack: NewStack(), debug: false}
 
 	c.completer = readline.NewPrefixCompleter(
+		// custom lua functions
+		readline.PcItemDynamic(GetCompleteCustomFunctions()),
+
 		// commands
 		readline.PcItem("dump"),
 		readline.PcItem("reverse"),
@@ -102,9 +118,14 @@ func (c *Calc) Eval(line string) {
 		"SqrtPhi", "Ln2", "Log2E", "Ln10", "Log10E"}
 	functions := []string{"sqrt", "remainder", "%", "%-", "%+"}
 	batch := []string{"median", "avg"}
+	luafuncs := []string{}
 
 	if line == "" {
 		return
+	}
+
+	for luafunc := range LuaFuncs {
+		luafuncs = append(luafuncs, luafunc)
 	}
 
 	for _, item := range space.Split(line, -1) {
@@ -132,6 +153,11 @@ func (c *Calc) Eval(line string) {
 
 			if contains(batch, item) {
 				c.batchfunc(item)
+				continue
+			}
+
+			if contains(luafuncs, item) {
+				c.luafunc(item)
 				continue
 			}
 
@@ -333,38 +359,22 @@ func (c *Calc) batchfunc(funcname string) {
 	_ = c.Result()
 }
 
-func contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}
+func (c *Calc) luafunc(funcname string) {
+	// we may need to put them onto the stack afterwards!
+	c.stack.Backup()
+	b := c.stack.Pop()
+	a := c.stack.Pop()
 
-func const2num(name string) float64 {
-	switch name {
-	case "Pi":
-		return math.Pi
-	case "Phi":
-		return math.Phi
-	case "Sqrt2":
-		return math.Sqrt2
-	case "SqrtE":
-		return math.SqrtE
-	case "SqrtPi":
-		return math.SqrtPi
-	case "SqrtPhi":
-		return math.SqrtPhi
-	case "Ln2":
-		return math.Ln2
-	case "Log2E":
-		return math.Log2E
-	case "Ln10":
-		return math.Ln10
-	case "Log10E":
-		return math.Log10E
-	default:
-		return 0
+	x, err := CallLuaFunc(c.L, funcname, a, b)
+	if err != nil {
+		fmt.Println(err)
+		c.stack.Push(a)
+		c.stack.Push(b)
+		return
 	}
+
+	c.History("%s(%f,%f) = %f", funcname, a, b, x)
+	c.stack.Push(x)
+
+	c.Result()
 }

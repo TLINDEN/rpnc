@@ -6,6 +6,7 @@ import (
 
 	"github.com/chzyer/readline"
 	flag "github.com/spf13/pflag"
+	lua "github.com/yuin/gopher-lua"
 )
 
 const VERSION string = "0.0.1"
@@ -23,8 +24,7 @@ Options:
 When <operator>  is given, batch  mode ist automatically  enabled. Use
 this only when working with stdin. E.g.: echo "2 3 4 5" | rpn +
 
-Copyright (c) 2023 T.v.Dein
-`
+Copyright (c) 2023 T.v.Dein`
 
 func main() {
 	calc := NewCalc()
@@ -32,11 +32,14 @@ func main() {
 	showversion := false
 	showhelp := false
 	enabledebug := false
+	configfile := ""
 
 	flag.BoolVarP(&calc.batch, "batchmode", "b", false, "batch mode")
 	flag.BoolVarP(&enabledebug, "debug", "d", false, "debug mode")
 	flag.BoolVarP(&showversion, "version", "v", false, "show version")
 	flag.BoolVarP(&showhelp, "help", "h", false, "show usage")
+	flag.StringVarP(&configfile, "config", "c", os.Getenv("HOME")+"/.rpn.lua", "config file (lua format)")
+
 	flag.Parse()
 
 	if showversion {
@@ -51,6 +54,18 @@ func main() {
 
 	if enabledebug {
 		calc.ToggleDebug()
+	}
+
+	if _, err := os.Stat(configfile); err == nil {
+		L = lua.NewState()
+		defer L.Close()
+
+		if err := L.DoFile(configfile); err != nil {
+			panic(err)
+		}
+
+		InitLua(L)
+		calc.L = L
 	}
 
 	rl, err := readline.NewEx(&readline.Config{
