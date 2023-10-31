@@ -57,8 +57,31 @@ func main() {
 	}
 
 	if _, err := os.Stat(configfile); err == nil {
-		L = lua.NewState()
+		// FIXME: put into interpreter.go, probably with its own obj
+		// then just Interpreter.Init(configfile) should suffice
+		L = lua.NewState(lua.Options{SkipOpenLibs: true})
 		defer L.Close()
+
+		// we only  load a subset of lua Open  modules and don't allow
+		// net, system or io stuff
+		for _, pair := range []struct {
+			n string
+			f lua.LGFunction
+		}{
+			{lua.LoadLibName, lua.OpenPackage},
+			{lua.BaseLibName, lua.OpenBase},
+			{lua.TabLibName, lua.OpenTable},
+			{lua.DebugLibName, lua.OpenDebug},
+			{lua.MathLibName, lua.OpenMath},
+		} {
+			if err := L.CallByParam(lua.P{
+				Fn:      L.NewFunction(pair.f),
+				NRet:    0,
+				Protect: true,
+			}, lua.LString(pair.n)); err != nil {
+				panic(err)
+			}
+		}
 
 		if err := L.DoFile(configfile); err != nil {
 			panic(err)
