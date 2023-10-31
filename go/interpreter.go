@@ -12,6 +12,7 @@ var L *lua.LState
 
 var LuaFuncs map[string]int
 
+// FIXME: add 2nd var with help string
 // called from lua to register a 1 arg math function
 func RegisterFuncOneArg(L *lua.LState) int {
 	function := L.ToString(1)

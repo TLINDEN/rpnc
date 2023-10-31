@@ -34,7 +34,7 @@ Available operators:
 basic operators: + - * /
 
 Math operators:
-^       power`
+^       power` // FIXME: add help strings from lua functions
 
 // That way I can add custom functions to completion
 func GetCompleteCustomFunctions() func(string) []string {
