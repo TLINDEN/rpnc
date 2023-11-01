@@ -52,3 +52,9 @@ cover-report:
 
 goupdate:
 	go get -t -u=patch ./...
+
+buildall:
+	./mkrel.sh $(tool) $(VERSION)
+
+release: buildall
+	gh release create $(VERSION) --generate-notes releases/*
