@@ -1,42 +1,73 @@
+/*
+Copyright © 2023 Thomas von Dein
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package main
 
 import (
+	"errors"
 	"fmt"
 	"math"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/chzyer/readline"
-	lua "github.com/yuin/gopher-lua"
 )
 
 type Calc struct {
-	debug     bool
-	batch     bool
-	stdin     bool
-	stack     *Stack
-	history   []string
-	completer readline.AutoCompleter
-	L         *lua.LState
+	debug       bool
+	batch       bool
+	stdin       bool
+	stack       *Stack
+	history     []string
+	completer   readline.AutoCompleter
+	interpreter *Interpreter
 }
 
+// help for lua functions will be added dynamically
 const Help string = `Available commands:
-batch   enable batch mode
-debug   enable debug output
-dump    display the stack contents
-clear   clear the whole stack
-shift   remove the last element of the stack
-history display calculation history
-help    show this message
+batch                toggle batch mode
+debug                toggle debug output
+dump                 display the stack contents
+clear                clear the whole stack
+shift                remove the last element of the stack
+history              display calculation history
+help|?               show this message
+quit|exit|c-d|c-c    exit program
 
 Available operators:
-basic operators: + - * /
+basic operators: + - x /
+
+Available math functions:
+sqrt                 square root
+mod                  remainder of division
+max                  batch mode only: max of all values
+min                  batch mode only: min of all values
+mean                 batch mode only: mean of all values (alias: avg)
+median               batch mode only: median of all values
+%                    percent
+%-                   substract percent
+%+                   add percent
 
 Math operators:
-^       power` // FIXME: add help strings from lua functions
+^                    power`
 
-// That way I can add custom functions to completion
+// That way we can add custom functions to completion
 func GetCompleteCustomFunctions() func(string) []string {
 	return func(line string) []string {
 		funcs := []string{}
@@ -58,12 +89,15 @@ func NewCalc() *Calc {
 		readline.PcItem("dump"),
 		readline.PcItem("reverse"),
 		readline.PcItem("debug"),
+		readline.PcItem("undebug"),
 		readline.PcItem("clear"),
 		readline.PcItem("batch"),
 		readline.PcItem("shift"),
 		readline.PcItem("undo"),
 		readline.PcItem("help"),
 		readline.PcItem("history"),
+		readline.PcItem("exit"),
+		readline.PcItem("quit"),
 
 		// ops
 		readline.PcItem("+"),
@@ -91,41 +125,69 @@ func NewCalc() *Calc {
 		readline.PcItem("sqrt"),
 		readline.PcItem("remainder"),
 		readline.PcItem("avg"),
+		readline.PcItem("mean"), // alias for avg
+		readline.PcItem("min"),
+		readline.PcItem("max"),
 		readline.PcItem("median"),
 	)
 
 	return &c
 }
 
+// setup the interpreter, called from main()
+func (c *Calc) SetInt(I *Interpreter) {
+	c.interpreter = I
+}
+
 func (c *Calc) ToggleDebug() {
 	c.debug = !c.debug
 	c.stack.ToggleDebug()
+	fmt.Printf("debugging set to %t\n", c.debug)
 }
 
 func (c *Calc) ToggleBatch() {
 	c.batch = !c.batch
+	fmt.Printf("batchmode set to %t\n", c.batch)
 }
 
 func (c *Calc) ToggleStdin() {
 	c.stdin = !c.stdin
 }
 
+func (c *Calc) Prompt() string {
+	p := "\033[31m»\033[0m "
+	b := ""
+	if c.batch {
+		b = "->batch"
+	}
+	d := ""
+	v := ""
+	if c.debug {
+		d = "->debug"
+		v = fmt.Sprintf("/rev%d", c.stack.rev)
+	}
+
+	return fmt.Sprintf("rpn%s%s [%d%s]%s", b, d, c.stack.Len(), v, p)
+}
+
+// the actual work horse, evaluate a line of calc command[s]
 func (c *Calc) Eval(line string) {
 	line = strings.TrimSpace(line)
-	space := regexp.MustCompile(`\s+`)
-	simple := regexp.MustCompile(`^[\+\-\*\/]$`)
-	constants := []string{"E", "Pi", "Phi", "Sqrt2", "SqrtE", "SqrtPi",
-		"SqrtPhi", "Ln2", "Log2E", "Ln10", "Log10E"}
-	functions := []string{"sqrt", "remainder", "%", "%-", "%+"}
-	batch := []string{"median", "avg"}
-	luafuncs := []string{}
 
 	if line == "" {
 		return
 	}
 
-	for luafunc := range LuaFuncs {
-		luafuncs = append(luafuncs, luafunc)
+	space := regexp.MustCompile(`\s+`)
+	simple := regexp.MustCompile(`^[\+\-\*\/x\^]$`)
+	constants := []string{"E", "Pi", "Phi", "Sqrt2", "SqrtE", "SqrtPi",
+		"SqrtPhi", "Ln2", "Log2E", "Ln10", "Log10E"}
+	functions := []string{"sqrt", "remainder", "mod", "%", "%-", "%+"}
+	batch := []string{"median", "avg", "mean", "max", "min"}
+
+	luafuncs := []string{}
+	for name := range LuaFuncs {
+		luafuncs = append(luafuncs, name)
 	}
 
 	for _, item := range space.Split(line, -1) {
@@ -135,39 +197,53 @@ func (c *Calc) Eval(line string) {
 			c.stack.Backup()
 			c.stack.Push(num)
 		} else {
-			if simple.MatchString(line) {
+			if simple.MatchString(item) {
+				// simple ops like + or x
 				c.simple(item[0])
 				continue
 			}
 
 			if contains(constants, item) {
+				// put the constant onto the stack
 				c.stack.Backup()
 				c.stack.Push(const2num(item))
 				continue
 			}
 
 			if contains(functions, item) {
+				// go builtin math function, if implemented
 				c.mathfunc(item)
 				continue
 			}
 
 			if contains(batch, item) {
+				// math functions only supported in batch mode like max or mean
 				c.batchfunc(item)
 				continue
 			}
 
 			if contains(luafuncs, item) {
+				// user provided custom lua functions
 				c.luafunc(item)
 				continue
 			}
 
+			// management commands
 			switch item {
+			case "?":
+				fallthrough
 			case "help":
 				fmt.Println(Help)
+				fmt.Println("Lua functions:")
+				for name, function := range LuaFuncs {
+					fmt.Printf("%-20s %s\n", name, function.help)
+				}
 			case "dump":
 				c.stack.Dump()
 			case "debug":
 				c.ToggleDebug()
+			case "undebug":
+				c.debug = false
 			case "batch":
 				c.ToggleBatch()
 			case "clear":
@@ -185,8 +261,10 @@ func (c *Calc) Eval(line string) {
 				for _, entry := range c.history {
 					fmt.Println(entry)
 				}
-			case "^":
-				c.exp()
+			case "exit":
+				fallthrough
+			case "quit":
+				os.Exit(0)
 			default:
 				fmt.Println("unknown command or operator!")
 			}
@@ -194,10 +272,13 @@ func (c *Calc) Eval(line string) {
 	}
 }
 
+// just a textual representation of math operations, viewable with the
+// history command
 func (c *Calc) History(format string, args ...any) {
 	c.history = append(c.history, fmt.Sprintf(format, args...))
 }
 
+// print the result
 func (c *Calc) Result() float64 {
 	if !c.stdin {
 		fmt.Print("= ")
@@ -208,6 +289,13 @@ func (c *Calc) Result() float64 {
 	return c.stack.Last()
 }
 
+func (c *Calc) Debug(msg string) {
+	if c.debug {
+		fmt.Printf("DEBUG(calc): %s\n", msg)
+	}
+}
+
+// do simple calculations
 func (c *Calc) simple(op byte) {
 	c.stack.Backup()
 
@@ -216,15 +304,15 @@ func (c *Calc) simple(op byte) {
 		a := c.stack.Pop()
 		var x float64
 
-		if c.debug {
-			fmt.Printf("DEBUG:        evaluating: %.2f %c %.2f\n", a, op, b)
-		}
+		c.Debug(fmt.Sprintf("evaluating: %.2f %c %.2f", a, op, b))
 
 		switch op {
 		case '+':
 			x = a + b
 		case '-':
 			x = a - b
+		case 'x':
+			fallthrough // alias for *
 		case '*':
 			x = a * b
 		case '/':
@@ -233,6 +321,8 @@ func (c *Calc) simple(op byte) {
 				return
 			}
 			x = a / b
+		case '^':
+			x = math.Pow(a, b)
 		default:
 			panic("invalid operator!")
 		}
@@ -246,32 +336,11 @@ func (c *Calc) simple(op byte) {
 		}
 	}
 
-	_ = c.Result()
+	c.Result()
 }
 
-func (c *Calc) exp() {
-	c.stack.Backup()
-
-	for c.stack.Len() > 1 {
-		b := c.stack.Pop()
-		a := c.stack.Pop()
-		x := math.Pow(a, b)
-
-		c.stack.Push(x)
-
-		c.History("%f ^ %f = %f", a, b, x)
-
-		if !c.batch {
-			break
-		}
-	}
-
-	_ = c.Result()
-}
-
+// calc using go math lib functions
 func (c *Calc) mathfunc(funcname string) {
-	// FIXME: split into 2 funcs, one  working with 1 the other with 2
-	// args, saving Pop calls
 	c.stack.Backup()
 
 	for c.stack.Len() > 0 {
@@ -283,6 +352,8 @@ func (c *Calc) mathfunc(funcname string) {
 			x = math.Sqrt(a)
 			c.History("sqrt(%f) = %f", a, x)
 
+		case "mod":
+			fallthrough // alias
 		case "remainder":
 			b := c.stack.Pop()
 			a := c.stack.Pop()
@@ -319,9 +390,10 @@ func (c *Calc) mathfunc(funcname string) {
 		}
 	}
 
-	_ = c.Result()
+	c.Result()
 }
 
+// execute pure batch functions, operating on the whole stack
 func (c *Calc) batchfunc(funcname string) {
 	if !c.batch {
 		fmt.Println("error: only available in batch mode")
@@ -344,6 +416,8 @@ func (c *Calc) batchfunc(funcname string) {
 		x = all[middle]
 		c.History("median(all)")
 
+	case "mean":
+		fallthrough // alias
 	case "avg":
 		var sum float64
 
@@ -353,6 +427,28 @@ func (c *Calc) batchfunc(funcname string) {
 
 		x = sum / float64(count)
 		c.History("avg(all)")
+	case "min":
+		x = c.stack.Pop() // initialize with the last one
+
+		for c.stack.Len() > 0 {
+			val := c.stack.Pop()
+			if val < x {
+				x = val
+			}
+		}
+
+		c.History("min(all)")
+	case "max":
+		x = c.stack.Pop() // initialize with the last one
+
+		for c.stack.Len() > 0 {
+			val := c.stack.Pop()
+			if val > x {
+				x = val
+			}
+		}
+
+		c.History("max(all)")
 	}
 
 	c.stack.Push(x)
@@ -360,20 +456,41 @@ func (c *Calc) batchfunc(funcname string) {
 }
 
 func (c *Calc) luafunc(funcname string) {
-	// we may need to put them onto the stack afterwards!
-	c.stack.Backup()
-	b := c.stack.Pop()
-	a := c.stack.Pop()
+	// called from calc loop
+	var x float64
+	var err error
 
-	x, err := CallLuaFunc(c.L, funcname, a, b)
+	switch c.interpreter.FuncNumArgs(funcname) {
+	case 1:
+		x, err = c.interpreter.CallLuaFunc(funcname, []float64{c.stack.Last()})
+	case 2:
+		x, err = c.interpreter.CallLuaFunc(funcname, c.stack.LastTwo())
+	case -1:
+		x, err = c.interpreter.CallLuaFunc(funcname, c.stack.All())
+	default:
+		x, err = 0, errors.New("invalid number of argument requested")
+	}
+
 	if err != nil {
 		fmt.Println(err)
-		c.stack.Push(a)
-		c.stack.Push(b)
 		return
 	}
 
-	c.History("%s(%f,%f) = %f", funcname, a, b, x)
+	c.stack.Backup()
+
+	switch c.interpreter.FuncNumArgs(funcname) {
+	case 1:
+		a := c.stack.Pop()
+		c.History("%s(%f) = %f", funcname, a, x)
+	case 2:
+		a := c.stack.Pop()
+		b := c.stack.Pop()
+		c.History("%s(%f,%f) = %f", funcname, a, b, x)
+	case -1:
+		c.stack.Clear()
+		c.History("%s(*) = %f", funcname, x)
+	}
+
 	c.stack.Push(x)
 
 	c.Result()

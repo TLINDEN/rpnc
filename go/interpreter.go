@@ -1,3 +1,20 @@
+/*
+Copyright © 2023 Thomas von Dein
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package main
 
 import (
@@ -7,31 +24,59 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
+type Interpreter struct {
+	debug bool
+}
+
 // LUA interpreter, instanciated in main()
 var L *lua.LState
 
-var LuaFuncs map[string]int
-
-// FIXME: add 2nd var with help string
-// called from lua to register a 1 arg math function
-func RegisterFuncOneArg(L *lua.LState) int {
-	function := L.ToString(1)
-	LuaFuncs[function] = 1
-	return 1
+// holds a user provided lua function
+type LuaFunction struct {
+	name    string
+	help    string
+	numargs int
 }
 
-// called from lua to register a 1 arg math function
-func RegisterFuncTwoArg(L *lua.LState) int {
-	function := L.ToString(1)
-	LuaFuncs[function] = 2
-	return 1
-}
+// must be global since init() is  being called from lua which doesn't
+// have access to the interpreter instance
+var LuaFuncs map[string]LuaFunction
 
-func InitLua(L *lua.LState) {
-	LuaFuncs = map[string]int{}
-	L.SetGlobal("RegisterFuncOneArg", L.NewFunction(RegisterFuncOneArg))
-	L.SetGlobal("RegisterFuncTwoArg", L.NewFunction(RegisterFuncTwoArg))
+// initialize the lua environment properly
+func InitLua(config string, debug bool) *Interpreter {
+	// we only  load a subset of lua Open  modules and don't allow
+	// net, system or io stuff
+	for _, pair := range []struct {
+		n string
+		f lua.LGFunction
+	}{
+		{lua.LoadLibName, lua.OpenPackage},
+		{lua.BaseLibName, lua.OpenBase},
+		{lua.TabLibName, lua.OpenTable},
+		{lua.DebugLibName, lua.OpenDebug},
+		{lua.MathLibName, lua.OpenMath},
+	} {
+		if err := L.CallByParam(lua.P{
+			Fn:      L.NewFunction(pair.f),
+			NRet:    0,
+			Protect: true,
+		}, lua.LString(pair.n)); err != nil {
+			panic(err)
+		}
+	}
 
+	// load the lua config (which we expect to contain init() and math functions)
+	if err := L.DoFile(config); err != nil {
+		panic(err)
+	}
+
+	// instanciate
+	LuaFuncs = map[string]LuaFunction{}
+
+	// that way the user can call register(...) from lua inside init()
+	L.SetGlobal("register", L.NewFunction(register))
+
+	// actually call init()
 	if err := L.CallByParam(lua.P{
 		Fn:      L.GetGlobal("init"),
 		NRet:    0,
@@ -39,26 +84,68 @@ func InitLua(L *lua.LState) {
 	}); err != nil {
 		panic(err)
 	}
+
+	return &Interpreter{debug: debug}
 }
 
-func CallLuaFunc(L *lua.LState, funcname string, a float64, b float64) (float64, error) {
-	if LuaFuncs[funcname] == 1 {
+func (i *Interpreter) Debug(msg string) {
+	if i.debug {
+		fmt.Printf("DEBUG(lua): %s\n", msg)
+	}
+}
+
+func (i *Interpreter) FuncNumArgs(name string) int {
+	return LuaFuncs[name].numargs
+}
+
+// Call a user provided math function registered with register().
+//
+// Each function has  to tell us how many args  it expects, the actual
+// function call  from here  is different depending  on the  number of
+// arguments. 1 uses the last item of the stack, 2 the last two and -1
+// all items (which translates to batch mode)
+//
+// The  items  array  will  be   provded  by  calc.Eval(),  these  are
+// non-popped stack  items. So  the items will  only removed  from the
+// stack when the lua function execution is successfull.
+func (i *Interpreter) CallLuaFunc(funcname string, items []float64) (float64, error) {
+	i.Debug(fmt.Sprintf("calling lua func %s() with %d args",
+		funcname, LuaFuncs[funcname].numargs))
+
+	switch LuaFuncs[funcname].numargs {
+	case 1:
 		// 1 arg variant
 		if err := L.CallByParam(lua.P{
 			Fn:      L.GetGlobal(funcname),
 			NRet:    1,
 			Protect: true,
-		}, lua.LNumber(a)); err != nil {
+		}, lua.LNumber(items[0])); err != nil {
 			fmt.Println(err)
 			return 0, err
 		}
-	} else {
+	case 2:
 		// 2 arg variant
 		if err := L.CallByParam(lua.P{
 			Fn:      L.GetGlobal(funcname),
 			NRet:    1,
 			Protect: true,
-		}, lua.LNumber(a), lua.LNumber(b)); err != nil {
+		}, lua.LNumber(items[0]), lua.LNumber(items[1])); err != nil {
+			return 0, err
+		}
+	case -1:
+		// batch variant, use lua table as array
+		tb := L.NewTable()
+
+		// put the whole stack into it
+		for _, item := range items {
+			tb.Append(lua.LNumber(item))
+		}
+
+		if err := L.CallByParam(lua.P{
+			Fn:      L.GetGlobal(funcname),
+			NRet:    1,
+			Protect: true,
+		}, tb); err != nil {
 			return 0, err
 		}
 	}
@@ -69,5 +156,22 @@ func CallLuaFunc(L *lua.LState, funcname string, a float64, b float64) (float64,
 		return float64(res), nil
 	}
 
-	return 0, errors.New("function did not return a float64!")
+	return 0, errors.New("function did not return a float64")
+}
+
+// called from lua to register a math  function numargs may be 1, 2 or
+// -1, it denotes the number of  items from the stack requested by the
+// lua function. -1 means batch mode, that is all items
+func register(L *lua.LState) int {
+	function := L.ToString(1)
+	numargs := L.ToInt(2)
+	help := L.ToString(3)
+
+	LuaFuncs[function] = LuaFunction{
+		name:    function,
+		numargs: numargs,
+		help:    help,
+	}
+
+	return 1
 }

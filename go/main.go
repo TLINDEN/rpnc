@@ -1,8 +1,26 @@
+/*
+Copyright © 2023 Thomas von Dein
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package main
 
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/chzyer/readline"
 	flag "github.com/spf13/pflag"
@@ -38,7 +56,8 @@ func main() {
 	flag.BoolVarP(&enabledebug, "debug", "d", false, "debug mode")
 	flag.BoolVarP(&showversion, "version", "v", false, "show version")
 	flag.BoolVarP(&showhelp, "help", "h", false, "show usage")
-	flag.StringVarP(&configfile, "config", "c", os.Getenv("HOME")+"/.rpn.lua", "config file (lua format)")
+	flag.StringVarP(&configfile, "config", "c",
+		os.Getenv("HOME")+"/.rpn.lua", "config file (lua format)")
 
 	flag.Parse()
 
@@ -56,43 +75,28 @@ func main() {
 		calc.ToggleDebug()
 	}
 
+	// the lua state object is global, instanciate it early
+	L = lua.NewState(lua.Options{SkipOpenLibs: true})
+	defer L.Close()
+
+	// our config file is interpreted  as lua code, only functions can
+	// be defined, init() will be called by InitLua().
 	if _, err := os.Stat(configfile); err == nil {
-		// FIXME: put into interpreter.go, probably with its own obj
-		// then just Interpreter.Init(configfile) should suffice
-		L = lua.NewState(lua.Options{SkipOpenLibs: true})
-		defer L.Close()
-
-		// we only  load a subset of lua Open  modules and don't allow
-		// net, system or io stuff
-		for _, pair := range []struct {
-			n string
-			f lua.LGFunction
-		}{
-			{lua.LoadLibName, lua.OpenPackage},
-			{lua.BaseLibName, lua.OpenBase},
-			{lua.TabLibName, lua.OpenTable},
-			{lua.DebugLibName, lua.OpenDebug},
-			{lua.MathLibName, lua.OpenMath},
-		} {
-			if err := L.CallByParam(lua.P{
-				Fn:      L.NewFunction(pair.f),
-				NRet:    0,
-				Protect: true,
-			}, lua.LString(pair.n)); err != nil {
-				panic(err)
-			}
-		}
-
-		if err := L.DoFile(configfile); err != nil {
-			panic(err)
-		}
-
-		InitLua(L)
-		calc.L = L
+		I := InitLua(configfile, enabledebug)
+		calc.SetInt(I)
 	}
 
+	if len(flag.Args()) > 1 {
+		// commandline calc operation, no readline etc needed
+		// called like rpn 2 2 +
+		calc.stdin = true
+		calc.Eval(strings.Join(flag.Args(), " "))
+		return
+	}
+
+	// interactive mode, need readline
 	rl, err := readline.NewEx(&readline.Config{
-		Prompt:            "\033[31m»\033[0m ",
+		Prompt:            calc.Prompt(),
 		HistoryFile:       os.Getenv("HOME") + "/.rpn-history",
 		HistoryLimit:      500,
 		AutoComplete:      calc.completer,
@@ -108,19 +112,27 @@ func main() {
 	rl.CaptureExitSignal()
 
 	if inputIsStdin() {
+		// commands are  coming on stdin, however we  will still enter
+		// the same loop since readline just reads fine from stdin
 		calc.ToggleStdin()
 	}
 
 	for {
+		// primary program repl
 		line, err := rl.Readline()
 		if err != nil {
 			break
 		}
 
 		calc.Eval(line)
+		rl.SetPrompt(calc.Prompt())
 	}
 
 	if len(flag.Args()) > 0 {
+		// called like this:
+		// echo 1 2 3 4 | rpn +
+		// batch mode enabled automatically
+		calc.batch = true
 		calc.Eval(flag.Args()[0])
 	}
 }
