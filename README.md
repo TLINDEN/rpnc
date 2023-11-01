@@ -115,7 +115,7 @@ and then enter  the <kbd>+</kbd> operator, the calculator  would pop 5
 and 6  from the stack,  add them  and push the  result 11 back  to the
 stack.
 
-However, if  you are in  collector mode, then  all the items  would be
+However, if  you are in  batch mode, then  all the items  would be
 added, the sub stack would be cleared and the result 14 would be added
 to the stack.
 
@@ -167,7 +167,7 @@ calculator. This function takes these parameters:
 - help text
 
 Please [refer to the lua language
-reference](https://www.lua.org/manual/5.4/** for more details about
+reference](https://www.lua.org/manual/5.4/) for more details about
 LUA.
 
 **Please note, that io, networking and system stuff is not allowed
