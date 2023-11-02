@@ -46,7 +46,7 @@ for D in $DIST; do
     GOOS=${os} GOARCH=${arch} go build -tags osusergo,netgo -ldflags "-extldflags=-static" -o ${binfile}
     mkdir -p ${tardir}
     cp ${binfile} README.md LICENSE ${tardir}/
-    echo 'tool = tablizer
+    echo 'tool = rpn
 PREFIX = /usr/local
 UID    = root
 GID    = 0
