@@ -223,6 +223,33 @@ LUA.
 though. So you can't open files, execute other programs or open a
 connection to the outside!**
 
+## Installation
+
+There are multiple ways to install **rpn**:
+
+- Go to the [latest release page](https://github.com/tlinden/rpn/releases/latest),
+  locate the binary for your operating system and platform.
+  
+  Download it and put it into some directory within your `$PATH` variable.
+  
+- The release page also contains a tarball for every supported platform. Unpack it
+  to some temporary directory, extract it and execute the following command inside:
+  ```
+  sudo make install
+  ```
+  
+- You can also install from source. Issue the following commands in your shell:
+  ```
+  git clone https://github.com/TLINDEN/rpn.git
+  cd rpn
+  make
+  sudo make install
+  ```
+
+If you  do not find a  binary release for your  platform, please don't
+hesitate to ask me about it, I'll add it.
+
+
 ## Documentation
 
 The  documentation  is  provided  as  a unix  man-page.   It  will  be
