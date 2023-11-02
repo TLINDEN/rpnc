@@ -30,13 +30,19 @@ import (
 )
 
 type Calc struct {
-	debug       bool
-	batch       bool
-	stdin       bool
-	stack       *Stack
-	history     []string
-	completer   readline.AutoCompleter
-	interpreter *Interpreter
+	debug          bool
+	batch          bool
+	stdin          bool
+	stack          *Stack
+	history        []string
+	completer      readline.AutoCompleter
+	interpreter    *Interpreter
+	Operators      *regexp.Regexp
+	Space          *regexp.Regexp
+	Constants      []string
+	MathFunctions  []string
+	BatchFunctions []string
+	LuaFunctions   []string
 }
 
 // help for lua functions will be added dynamically
@@ -55,7 +61,7 @@ basic operators: + - x /
 
 Available math functions:
 sqrt                 square root
-mod                  remainder of division
+mod                  remainder of division (alias: remainder)
 max                  batch mode only: max of all values
 min                  batch mode only: min of all values
 mean                 batch mode only: mean of all values (alias: avg)
@@ -67,14 +73,31 @@ median               batch mode only: median of all values
 Math operators:
 ^                    power`
 
+// commands, constants and operators,  defined here to feed completion
+// and our mode switch in Eval() dynamically
+const (
+	Commands       string = `dump reverse debug undebug clear batch shift undo help history exit quit`
+	Operators      string = `+ - * x / ^ % %- %+`
+	MathFunctions  string = `sqrt remainder avg mean min max median`
+	Constants      string = `Pi Phi Sqrt2 SqrtE SqrtPi SqrtPhi Ln2 Log2E Ln10 Log10E`
+	BatchFunctions string = `median avg mean max min`
+)
+
 // That way we can add custom functions to completion
 func GetCompleteCustomFunctions() func(string) []string {
 	return func(line string) []string {
-		funcs := []string{}
+		completions := []string{}
+
 		for luafunc := range LuaFuncs {
-			funcs = append(funcs, luafunc)
+			completions = append(completions, luafunc)
 		}
-		return funcs
+
+		completions = append(completions, strings.Split(Commands, " ")...)
+		completions = append(completions, strings.Split(Operators, " ")...)
+		completions = append(completions, strings.Split(MathFunctions, " ")...)
+		completions = append(completions, strings.Split(Constants, " ")...)
+
+		return completions
 	}
 }
 
@@ -84,52 +107,31 @@ func NewCalc() *Calc {
 	c.completer = readline.NewPrefixCompleter(
 		// custom lua functions
 		readline.PcItemDynamic(GetCompleteCustomFunctions()),
-
-		// commands
-		readline.PcItem("dump"),
-		readline.PcItem("reverse"),
-		readline.PcItem("debug"),
-		readline.PcItem("undebug"),
-		readline.PcItem("clear"),
-		readline.PcItem("batch"),
-		readline.PcItem("shift"),
-		readline.PcItem("undo"),
-		readline.PcItem("help"),
-		readline.PcItem("history"),
-		readline.PcItem("exit"),
-		readline.PcItem("quit"),
-
-		// ops
-		readline.PcItem("+"),
-		readline.PcItem("-"),
-		readline.PcItem("*"),
-		readline.PcItem("/"),
-		readline.PcItem("^"),
-		readline.PcItem("%"),
-		readline.PcItem("%-"),
-		readline.PcItem("%+"),
-
-		// constants
-		readline.PcItem("Pi"),
-		readline.PcItem("Phi"),
-		readline.PcItem("Sqrt2"),
-		readline.PcItem("SqrtE"),
-		readline.PcItem("SqrtPi"),
-		readline.PcItem("SqrtPhi"),
-		readline.PcItem("Ln2"),
-		readline.PcItem("Log2E"),
-		readline.PcItem("Ln10"),
-		readline.PcItem("Log10E"),
-
-		// math functions
-		readline.PcItem("sqrt"),
-		readline.PcItem("remainder"),
-		readline.PcItem("avg"),
-		readline.PcItem("mean"), // alias for avg
-		readline.PcItem("min"),
-		readline.PcItem("max"),
-		readline.PcItem("median"),
 	)
+
+	// pre-calculate mode switching regexes
+	reg := `^[`
+	for _, op := range strings.Split(Operators, " ") {
+		switch op {
+		case "x":
+			reg += op
+		default:
+			reg += `\` + op
+		}
+	}
+	reg += `]$`
+	c.Operators = regexp.MustCompile(reg)
+
+	c.Space = regexp.MustCompile(`\s+`)
+
+	// pre-calculate mode switching arrays
+	c.Constants = strings.Split(Constants, " ")
+	c.MathFunctions = strings.Split(MathFunctions, " ")
+	c.BatchFunctions = strings.Split(BatchFunctions, " ")
+
+	for name := range LuaFuncs {
+		c.LuaFunctions = append(c.LuaFunctions, name)
+	}
 
 	return &c
 }
@@ -178,51 +180,39 @@ func (c *Calc) Eval(line string) {
 		return
 	}
 
-	space := regexp.MustCompile(`\s+`)
-	simple := regexp.MustCompile(`^[\+\-\*\/x\^]$`)
-	constants := []string{"E", "Pi", "Phi", "Sqrt2", "SqrtE", "SqrtPi",
-		"SqrtPhi", "Ln2", "Log2E", "Ln10", "Log10E"}
-	functions := []string{"sqrt", "remainder", "mod", "%", "%-", "%+"}
-	batch := []string{"median", "avg", "mean", "max", "min"}
-
-	luafuncs := []string{}
-	for name := range LuaFuncs {
-		luafuncs = append(luafuncs, name)
-	}
-
-	for _, item := range space.Split(line, -1) {
+	for _, item := range c.Space.Split(line, -1) {
 		num, err := strconv.ParseFloat(item, 64)
 
 		if err == nil {
 			c.stack.Backup()
 			c.stack.Push(num)
 		} else {
-			if simple.MatchString(item) {
+			if c.Operators.MatchString(item) {
 				// simple ops like + or x
 				c.simple(item[0])
 				continue
 			}
 
-			if contains(constants, item) {
+			if contains(c.Constants, item) {
 				// put the constant onto the stack
 				c.stack.Backup()
 				c.stack.Push(const2num(item))
 				continue
 			}
 
-			if contains(functions, item) {
+			if contains(c.MathFunctions, item) {
 				// go builtin math function, if implemented
 				c.mathfunc(item)
 				continue
 			}
 
-			if contains(batch, item) {
+			if contains(c.BatchFunctions, item) {
 				// math functions only supported in batch mode like max or mean
 				c.batchfunc(item)
 				continue
 			}
 
-			if contains(luafuncs, item) {
+			if contains(c.LuaFunctions, item) {
 				// user provided custom lua functions
 				c.luafunc(item)
 				continue
