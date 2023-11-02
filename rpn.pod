@@ -121,6 +121,22 @@ The stack can be reversed using the B<reverse> command.
 You can use the B<shift> command to remove the last number from the
 stack.
 
+=head2 BUILTIN OPERATORS AND FUNCTIONS
+
+Basic operators: + - x /
+
+Math functions:
+
+    sqrt                 square root
+    mod                  remainder of division (alias: remainder)
+    max                  batch mode only: max of all values
+    min                  batch mode only: min of all values
+    mean                 batch mode only: mean of all values (alias: avg)
+    median               batch mode only: median of all values
+    %                    percent
+    %-                   substract percent
+    %+                   add percent
+    ^                    power
 
 =head1 EXTENDING RPN USING LUA
 

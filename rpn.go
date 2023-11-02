@@ -115,6 +115,22 @@ DESCRIPTION
 
     You can use the shift command to remove the last number from the stack.
 
+  BUILTIN OPERATORS AND FUNCTIONS
+    Basic operators: + - x /
+
+    Math functions:
+
+        sqrt                 square root
+        mod                  remainder of division (alias: remainder)
+        max                  batch mode only: max of all values
+        min                  batch mode only: min of all values
+        mean                 batch mode only: mean of all values (alias: avg)
+        median               batch mode only: median of all values
+        %                    percent
+        %-                   substract percent
+        %+                   add percent
+        ^                    power
+
 EXTENDING RPN USING LUA
     You can use a lua script with lua functions to extend the calculator. By
     default the tool looks for "~/.rpn.lua". You can also specify a script
