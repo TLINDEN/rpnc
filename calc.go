@@ -76,9 +76,9 @@ Math operators:
 // commands, constants and operators,  defined here to feed completion
 // and our mode switch in Eval() dynamically
 const (
-	Commands       string = `dump reverse debug undebug clear batch shift undo help history exit quit`
+	Commands       string = `dump reverse debug undebug clear batch shift undo help history manual exit quit`
 	Operators      string = `+ - * x / ^ % %- %+`
-	MathFunctions  string = `sqrt remainder avg mean min max median`
+	MathFunctions  string = `sqrt remainder`
 	Constants      string = `Pi Phi Sqrt2 SqrtE SqrtPi SqrtPhi Ln2 Log2E Ln10 Log10E`
 	BatchFunctions string = `median avg mean max min`
 )
@@ -255,6 +255,8 @@ func (c *Calc) Eval(line string) {
 				fallthrough
 			case "quit":
 				os.Exit(0)
+			case "manual":
+				man()
 			default:
 				fmt.Println("unknown command or operator!")
 			}

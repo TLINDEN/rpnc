@@ -23,8 +23,27 @@ archs     = darwin freebsd linux windows
 PREFIX    = /usr/local
 UID       = root
 GID       = 0
+HAVE_POD := $(shell pod2text -h 2>/dev/null)
 
-all: buildlocal
+all: $(tool).1 $(tool).go buildlocal
+
+%.1: %.pod
+ifdef HAVE_POD
+	  pod2man -c "User Commands" -r 1 -s 1 $*.pod > $*.1
+endif
+
+%.go: %.pod
+ifdef HAVE_POD
+	  echo "package main" > $*.go
+	  echo >> $*.go
+	  echo "var manpage = \`" >> $*.go
+	  pod2text $*.pod >> $*.go
+	  echo "\`" >> $*.go
+
+	  echo "var usage = \`" >> $*.go
+	  awk '/SYNOPS/{f=1;next} /DESCR/{f=0} f' $*.pod  | sed 's/^    //' >> $*.go
+	  echo "\`" >> $*.go
+endif
 
 buildlocal:
 	CGO_LDFLAGS='-static' go build -tags osusergo,netgo -ldflags "-extldflags=-static" -o $(tool)

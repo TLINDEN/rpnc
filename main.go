@@ -18,8 +18,11 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"log"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/chzyer/readline"
@@ -36,6 +39,7 @@ Usage: rpn [-bdvh] [<operator>]
 Options:
   -b, --batchmode   enable batch mode
   -d, --debug       enable debug mode
+  -m, --manual      show manual
   -v, --version     show version
   -h, --help        show help
 
@@ -49,6 +53,7 @@ func main() {
 
 	showversion := false
 	showhelp := false
+	showmanual := false
 	enabledebug := false
 	configfile := ""
 
@@ -56,6 +61,7 @@ func main() {
 	flag.BoolVarP(&enabledebug, "debug", "d", false, "debug mode")
 	flag.BoolVarP(&showversion, "version", "v", false, "show version")
 	flag.BoolVarP(&showhelp, "help", "h", false, "show usage")
+	flag.BoolVarP(&showmanual, "manual", "m", false, "show manual")
 	flag.StringVarP(&configfile, "config", "c",
 		os.Getenv("HOME")+"/.rpn.lua", "config file (lua format)")
 
@@ -73,6 +79,11 @@ func main() {
 
 	if enabledebug {
 		calc.ToggleDebug()
+	}
+
+	if showmanual {
+		man()
+		os.Exit(0)
 	}
 
 	// the lua state object is global, instanciate it early
@@ -140,4 +151,21 @@ func main() {
 func inputIsStdin() bool {
 	stat, _ := os.Stdin.Stat()
 	return (stat.Mode() & os.ModeCharDevice) == 0
+}
+
+func man() {
+	man := exec.Command("less", "-")
+
+	var b bytes.Buffer
+	b.Write([]byte(manpage))
+
+	man.Stdout = os.Stdout
+	man.Stdin = &b
+	man.Stderr = os.Stderr
+
+	err := man.Run()
+
+	if err != nil {
+		log.Fatal(err)
+	}
 }

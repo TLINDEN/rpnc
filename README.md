@@ -16,6 +16,55 @@ Features:
 - can calculate data in batch mode (also from STDIN)
 - extensible with custom LUA functions
 
+## Working principle
+
+Reverse Polish  Notation (short: RPN)  requires to have a  stack where
+numbers and results are being put.  So, you put numbers onto the stack
+and each math  operation uses these for calculation,  removes them and
+puts the result  back.
+
+To visualize it, let's look at a calculation:
+
+    ((80 + 20) / 2) * 4
+    
+This is how  you enter the formula  int an RPN calculator  and how the
+stack evolves during the operation:
+
+| rpn commands | stack contents | calculation   |
+|--------------|----------------|---------------|
+|           80 |             80 |               |
+|           20 |          80 20 |               |
+|            + |            100 | 80 + 20 = 100 |
+|            2 |          100 2 |               |
+|            / |             50 | 100 / 2 = 50  |
+|            4 |           50 4 |               |
+|            x |            200 | 50 * 4 = 200  |
+
+The last stack element 200 is the calculation result. This is how it looks with debugging enabled in `rpn`:
+
+```
+rpn->debug [0/rev0]» 80 20 + 2 / 4 x
+DEBUG(000):      push to stack: 80.00
+DEBUG(001):      push to stack: 20.00
+DEBUG(002):  remove from stack: 20.00
+DEBUG(003):  remove from stack: 80.00
+DEBUG(calc): evaluating: 80.00 + 20.00
+DEBUG(004):      push to stack: 100.00
+= 100
+DEBUG(005):      push to stack: 2.00
+DEBUG(006):  remove from stack: 2.00
+DEBUG(007):  remove from stack: 100.00
+DEBUG(calc): evaluating: 100.00 / 2.00
+DEBUG(008):      push to stack: 50.00
+= 50
+DEBUG(009):      push to stack: 4.00
+DEBUG(010):  remove from stack: 4.00
+DEBUG(011):  remove from stack: 50.00
+DEBUG(calc): evaluating: 50.00 x 4.00
+DEBUG(012):      push to stack: 200.00
+= 200
+```
+
 ## Usage
 
 Basically   you  enter   numbers  followed   by  an   operator  or   a
