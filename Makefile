@@ -76,4 +76,4 @@ buildall:
 	./mkrel.sh $(tool) $(VERSION)
 
 release: buildall
-	gh release create $(VERSION) --generate-notes releases/*
+	gh release create v$(VERSION) --generate-notes releases/*
