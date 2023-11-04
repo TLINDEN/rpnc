@@ -43,6 +43,8 @@ type Calc struct {
 	MathFunctions  []string
 	BatchFunctions []string
 	LuaFunctions   []string
+
+	Functions Funcalls
 }
 
 // help for lua functions will be added dynamically
