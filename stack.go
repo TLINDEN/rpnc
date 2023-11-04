@@ -94,46 +94,43 @@ func (s *Stack) Pop() float64 {
 }
 
 // just remove the last item, do not return it
-func (s *Stack) Shift() {
+func (s *Stack) Shift(num ...int) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
+
+	count := 1
+
+	if len(num) > 0 {
+		count = num[0]
+	}
 
 	if s.linklist.Len() == 0 {
 		return
 	}
 
-	tail := s.linklist.Back()
-	s.linklist.Remove(tail)
-
-	s.Debug(fmt.Sprintf("remove from stack: %.2f", tail.Value))
+	for i := 0; i < count; i++ {
+		tail := s.linklist.Back()
+		s.linklist.Remove(tail)
+		s.Debug(fmt.Sprintf("remove from stack: %.2f", tail.Value))
+	}
 }
 
 // just return the last item, do not remove it
-func (s *Stack) Last() float64 {
-	if s.linklist.Back() == nil {
-		return 0
+func (s *Stack) Last(num ...int) []float64 {
+	count := 1
+	var items []float64
+	if len(num) > 0 {
+		count = num[0]
 	}
 
-	return s.linklist.Back().Value.(float64)
-}
-
-// Return the last 2 elements of the stack without modifying it.
-//
-// We  need to return  the last 2  elements of the  stack, however
-// container/list only  supports access to 1 last  element. So, we
-// pop the last, retrieve the  second last and push the popped one
-// back.
-func (s *Stack) LastTwo() []float64 {
-	items := []float64{}
 	if s.linklist.Back() == nil {
-		return items
+		return nil
 	}
 
-	last := s.Pop()
-	items = append(items, last)
-	items = append(items, s.linklist.Back().Value.(float64))
+	for i := 0; i < count; i++ {
+		items = append(items, s.linklist.Back().Value.(float64))
+	}
 
-	s.Push(last)
 	return items
 }
 
