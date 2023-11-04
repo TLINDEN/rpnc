@@ -24,8 +24,17 @@ import (
 	"strings"
 )
 
+type R struct {
+	Res float64
+	Err error
+}
+
+type Numbers []float64
+
+type Function func(Numbers) R
+
 // every function we  are able to call must be  of type Funcall, which
-// needs tp  specify how  many numbers  it expects  and the  actual go
+// needs to  specify how  many numbers  it expects  and the  actual go
 // function to be executed.
 //
 // The function  has to take  a float slice  as argument and  return a
@@ -33,7 +42,6 @@ import (
 // the expected number of arguments.
 //
 // However, Lua functions are handled differently, see interpreter.go.
-type Function func([]float64) (float64, error)
 type Funcall struct {
 	Expectargs int // -1 means batch only mode, you'll get the whole stack as arg
 	Func       Function
@@ -57,37 +65,42 @@ func NewFuncall(function Function, expectargs ...int) *Funcall {
 	}
 }
 
+// Convenience function, create new result
+func NewR(n float64, e error) R {
+	return R{Res: n, Err: e}
+}
+
 // the actual functions, called once during initialization.
 func DefineFunctions() Funcalls {
 	f := map[string]*Funcall{
 		// simple operators, they all expect 2 args
 		"+": NewFuncall(
-			func(arg []float64) (float64, error) {
-				return arg[0] + arg[1], nil
+			func(arg Numbers) R {
+				return NewR(arg[0]+arg[1], nil)
 			},
 		),
 		"-": NewFuncall(
-			func(arg []float64) (float64, error) {
-				return arg[0] - arg[1], nil
+			func(arg Numbers) R {
+				return NewR(arg[0]-arg[1], nil)
 			},
 		),
 		"x": NewFuncall(
-			func(arg []float64) (float64, error) {
-				return arg[0] * arg[1], nil
+			func(arg Numbers) R {
+				return NewR(arg[0]*arg[1], nil)
 			},
 		),
 		"/": NewFuncall(
-			func(arg []float64) (float64, error) {
+			func(arg Numbers) R {
 				if arg[1] == 0 {
-					return 0, errors.New("division by null")
+					return NewR(0, errors.New("division by null"))
 				}
 
-				return arg[0] / arg[1], nil
+				return NewR(arg[0]/arg[1], nil)
 			},
 		),
 		"^": NewFuncall(
-			func(arg []float64) (float64, error) {
-				return math.Pow(arg[0], arg[1]), nil
+			func(arg Numbers) R {
+				return NewR(math.Pow(arg[0], arg[1]), nil)
 			},
 		),
 	}
@@ -98,12 +111,12 @@ func DefineFunctions() Funcalls {
 	return f
 }
 
-func list2str(list []float64) string {
+func list2str(list Numbers) string {
 	return strings.Trim(strings.Join(strings.Fields(fmt.Sprint(list)), " "), "[]")
 }
 
 // we need to add a history entry for each operation
-func (c *Calc) SetHistory(op string, args []float64) {
+func (c *Calc) SetHistory(op string, args Numbers) {
 	c.History("%s %s", list2str(args))
 }
 
@@ -111,9 +124,11 @@ func (c *Calc) SetHistory(op string, args []float64) {
 //
 // FIXME:  add a  loop over  DoFuncall() for  non-batch-only functions
 // like + or *
+//
+// FIXME: use R{} as well? or even everywhere, while we're at it?
 func (c *Calc) DoFuncall(funcname string) (float64, error) {
 	if function, ok := c.Functions[funcname]; ok {
-		args := []float64{}
+		args := Numbers{}
 		batch := false
 
 		if function.Expectargs == -1 {
@@ -133,11 +148,11 @@ func (c *Calc) DoFuncall(funcname string) (float64, error) {
 		// the  actual lambda call, so  to say. We provide  a slice of
 		// the requested size, fetched  from the stack (but not popped
 		// yet!)
-		res, err := function.Func(args)
+		R := function.Func(args)
 
-		if err != nil {
+		if R.Err != nil {
 			// leave the stack untouched in case of any error
-			return res, err
+			return R.Res, R.Err
 		}
 
 		if batch {
@@ -149,11 +164,11 @@ func (c *Calc) DoFuncall(funcname string) (float64, error) {
 		}
 
 		// save result
-		c.stack.Push(res)
+		c.stack.Push(R.Res)
 
 		// thanks a lot
 		c.SetHistory(funcname, args)
-		return res, nil
+		return R.Res, nil
 	}
 
 	// should not happen, if it does: programmer fault!
