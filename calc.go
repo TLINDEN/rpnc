@@ -287,11 +287,6 @@ func (c *Calc) Eval(line string) {
 }
 
 // Execute a math function, check if it is defined just in case
-//
-// FIXME:  add a  loop over  DoFuncall() for  non-batch-only functions
-// like + or *
-//
-// FIXME: use R{} as well? or even everywhere, while we're at it?
 func (c *Calc) DoFuncall(funcname string) error {
 	var function *Funcall
 	if c.batch {
