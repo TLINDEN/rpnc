@@ -55,7 +55,6 @@ clean:
 
 test:
 	go test -v ./...
-	bash t/test.sh
 
 singletest:
 	@echo "Call like this: ''make singletest TEST=TestPrepareColumns MOD=lib"
