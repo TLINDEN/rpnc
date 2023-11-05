@@ -135,11 +135,263 @@ func DefineFunctions() Funcalls {
 				return NewR(math.Sqrt(arg[0]), nil)
 			},
 			1),
+
+		"abs": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Abs(arg[0]), nil)
+			},
+			1),
+
+		"acos": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Acos(arg[0]), nil)
+			},
+			1),
+
+		"acosh": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Acosh(arg[0]), nil)
+			},
+			1),
+
+		"asin": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Asin(arg[0]), nil)
+			},
+			1),
+
+		"asinh": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Asinh(arg[0]), nil)
+			},
+			1),
+
+		"atan": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Atan(arg[0]), nil)
+			},
+			1),
+
+		"atan2": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Atan2(arg[0], arg[1]), nil)
+			},
+			2),
+
+		"atanh": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Atanh(arg[0]), nil)
+			},
+			1),
+
+		"cbrt": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Cbrt(arg[0]), nil)
+			},
+			1),
+
+		"ceil": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Ceil(arg[0]), nil)
+			},
+			1),
+
+		"cos": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Cos(arg[0]), nil)
+			},
+			1),
+
+		"cosh": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Cosh(arg[0]), nil)
+			},
+			1),
+
+		"erf": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Erf(arg[0]), nil)
+			},
+			1),
+
+		"erfc": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Erfc(arg[0]), nil)
+			},
+			1),
+
+		"erfcinv": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Erfcinv(arg[0]), nil)
+			},
+			1),
+
+		"erfinv": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Erfinv(arg[0]), nil)
+			},
+			1),
+
+		"exp": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Exp(arg[0]), nil)
+			},
+			1),
+
+		"exp2": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Exp2(arg[0]), nil)
+			},
+			1),
+
+		"expm1": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Expm1(arg[0]), nil)
+			},
+			1),
+
+		"floor": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Floor(arg[0]), nil)
+			},
+			1),
+
+		"gamma": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Gamma(arg[0]), nil)
+			},
+			1),
+
+		"ilogb": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(float64(math.Ilogb(arg[0])), nil)
+			},
+			1),
+
+		"j0": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.J0(arg[0]), nil)
+			},
+			1),
+
+		"j1": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.J1(arg[0]), nil)
+			},
+			1),
+
+		"log": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Log(arg[0]), nil)
+			},
+			1),
+
+		"log10": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Log10(arg[0]), nil)
+			},
+			1),
+
+		"log1p": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Log1p(arg[0]), nil)
+			},
+			1),
+
+		"log2": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Log2(arg[0]), nil)
+			},
+			1),
+
+		"logb": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Logb(arg[0]), nil)
+			},
+			1),
+
+		"pow": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Pow(arg[0], arg[1]), nil)
+			},
+			2),
+
+		"round": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Round(arg[0]), nil)
+			},
+			1),
+
+		"roundtoeven": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.RoundToEven(arg[0]), nil)
+			},
+			1),
+
+		"sin": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Sin(arg[0]), nil)
+			},
+			1),
+
+		"sinh": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Sinh(arg[0]), nil)
+			},
+			1),
+
+		"tan": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Tan(arg[0]), nil)
+			},
+			1),
+
+		"tanh": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Tanh(arg[0]), nil)
+			},
+			1),
+
+		"trunc": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Trunc(arg[0]), nil)
+			},
+			1),
+
+		"y0": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Y0(arg[0]), nil)
+			},
+			1),
+
+		"y1": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Y1(arg[0]), nil)
+			},
+			1),
+
+		"copysign": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Copysign(arg[0], arg[1]), nil)
+			},
+			2),
+
+		"dim": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Dim(arg[0], arg[1]), nil)
+			},
+			2),
+
+		"hypot": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Hypot(arg[0], arg[1]), nil)
+			},
+			2),
 	}
 
 	// aliases
 	f["*"] = f["x"]
-	f["mod"] = f["remainder"]
+	f["remainder"] = f["mod"]
 
 	return f
 }
