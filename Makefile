@@ -77,3 +77,15 @@ buildall:
 
 release: buildall
 	gh release create v$(VERSION) --generate-notes releases/*
+
+show-versions: buildlocal
+	@echo "### rpn version:"
+	@./rpn -v
+
+	@echo
+	@echo "### go module versions:"
+	@go list -m all
+
+	@echo
+	@echo "### go version used for building:"
+	@grep -m 1 go go.mod
