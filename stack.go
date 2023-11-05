@@ -161,7 +161,7 @@ func (s *Stack) Dump() {
 }
 
 func (s *Stack) Clear() {
-	s.Debug("DEBUG: clearing stack")
+	s.Debug("clearing stack")
 
 	s.linklist = list.List{}
 }

@@ -317,7 +317,7 @@ func (c *Calc) DoFuncall(funcname string) error {
 		args = c.stack.Last(function.Expectargs)
 	}
 
-	c.Debug(fmt.Sprintf("args: %v", args))
+	c.Debug(fmt.Sprintf("calling %s with args: %v", funcname, args))
 
 	// the  actual lambda call, so  to say. We provide  a slice of
 	// the requested size, fetched  from the stack (but not popped
