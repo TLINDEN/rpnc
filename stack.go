@@ -115,20 +115,20 @@ func (s *Stack) Shift(num ...int) {
 	}
 }
 
-// just return the last item, do not remove it
+// Return the last num items from the stack w/o modifying it.
 func (s *Stack) Last(num ...int) []float64 {
+	items := []float64{}
+	i := s.Len()
 	count := 1
-	var items []float64
 	if len(num) > 0 {
 		count = num[0]
 	}
 
-	if s.linklist.Back() == nil {
-		return nil
-	}
-
-	for i := 0; i < count; i++ {
-		items = append(items, s.linklist.Back().Value.(float64))
+	for e := s.linklist.Front(); e != nil; e = e.Next() {
+		if i <= count {
+			items = append(items, e.Value.(float64))
+		}
+		i--
 	}
 
 	return items

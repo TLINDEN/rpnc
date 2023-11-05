@@ -19,9 +19,7 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"math"
-	"strings"
 )
 
 type R struct {
@@ -79,16 +77,19 @@ func DefineFunctions() Funcalls {
 				return NewR(arg[0]+arg[1], nil)
 			},
 		),
+
 		"-": NewFuncall(
 			func(arg Numbers) R {
 				return NewR(arg[0]-arg[1], nil)
 			},
 		),
+
 		"x": NewFuncall(
 			func(arg Numbers) R {
 				return NewR(arg[0]*arg[1], nil)
 			},
 		),
+
 		"/": NewFuncall(
 			func(arg Numbers) R {
 				if arg[1] == 0 {
@@ -98,79 +99,110 @@ func DefineFunctions() Funcalls {
 				return NewR(arg[0]/arg[1], nil)
 			},
 		),
+
 		"^": NewFuncall(
 			func(arg Numbers) R {
 				return NewR(math.Pow(arg[0], arg[1]), nil)
 			},
 		),
+
+		"%": NewFuncall(
+			func(arg Numbers) R {
+				return NewR((arg[0]/100)*arg[1], nil)
+			},
+		),
+
+		"%-": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(arg[0]-((arg[0]/100)*arg[1]), nil)
+			},
+		),
+
+		"%+": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(arg[0]+((arg[0]/100)*arg[1]), nil)
+			},
+		),
+
+		"mod": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Remainder(arg[0], arg[1]), nil)
+			},
+		),
+
+		"sqrt": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(math.Sqrt(arg[0]), nil)
+			},
+			1),
 	}
 
 	// aliases
 	f["*"] = f["x"]
+	f["mod"] = f["remainder"]
 
 	return f
 }
 
-func list2str(list Numbers) string {
-	return strings.Trim(strings.Join(strings.Fields(fmt.Sprint(list)), " "), "[]")
-}
+func DefineBatchFunctions() Funcalls {
+	f := map[string]*Funcall{
+		"median": NewFuncall(
+			func(args Numbers) R {
+				middle := len(args) / 2
+				return NewR(args[middle], nil)
+			},
+			-1),
 
-// we need to add a history entry for each operation
-func (c *Calc) SetHistory(op string, args Numbers) {
-	c.History("%s %s", list2str(args))
-}
+		"mean": NewFuncall(
+			func(args Numbers) R {
+				var sum float64
+				for _, item := range args {
+					sum += item
+				}
+				return NewR(sum/float64(len(args)), nil)
+			},
+			-1),
 
-// Execute a math function, check if it is defined just in case
-//
-// FIXME:  add a  loop over  DoFuncall() for  non-batch-only functions
-// like + or *
-//
-// FIXME: use R{} as well? or even everywhere, while we're at it?
-func (c *Calc) DoFuncall(funcname string) (float64, error) {
-	if function, ok := c.Functions[funcname]; ok {
-		args := Numbers{}
-		batch := false
+		"min": NewFuncall(
+			func(args Numbers) R {
+				var min float64
+				min, args = args[0], args[1:]
+				for _, item := range args {
+					if item < min {
+						min = item
+					}
+				}
+				return NewR(min, nil)
+			},
+			-1),
 
-		if function.Expectargs == -1 {
-			// batch mode, but always < stack len, so check first
-			args = c.stack.All()
-			batch = true
-		} else {
-			//  this is way better behavior than just using 0 in place of
-			// non-existing stack items
-			if c.stack.Len() < function.Expectargs {
-				return -1, errors.New("stack doesn't provide enough arguments")
-			}
+		"max": NewFuncall(
+			func(args Numbers) R {
+				var max float64
+				max, args = args[0], args[1:]
+				for _, item := range args {
+					if item > max {
+						max = item
+					}
+				}
+				return NewR(max, nil)
+			},
+			-1),
 
-			args = c.stack.Last(function.Expectargs)
-		}
-
-		// the  actual lambda call, so  to say. We provide  a slice of
-		// the requested size, fetched  from the stack (but not popped
-		// yet!)
-		R := function.Func(args)
-
-		if R.Err != nil {
-			// leave the stack untouched in case of any error
-			return R.Res, R.Err
-		}
-
-		if batch {
-			// get rid of stack
-			c.stack.Clear()
-		} else {
-			// remove operands
-			c.stack.Shift(function.Expectargs)
-		}
-
-		// save result
-		c.stack.Push(R.Res)
-
-		// thanks a lot
-		c.SetHistory(funcname, args)
-		return R.Res, nil
+		"sum": NewFuncall(
+			func(args Numbers) R {
+				var sum float64
+				for _, item := range args {
+					sum += item
+				}
+				return NewR(sum, nil)
+			},
+			-1),
 	}
 
-	// should not happen, if it does: programmer fault!
-	return -1, errors.New("heck, no such function")
+	// aliases
+	f["+"] = f["sum"]
+	f["avg"] = f["mean"]
+
+	return f
 }

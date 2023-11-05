@@ -30,21 +30,19 @@ import (
 )
 
 type Calc struct {
-	debug          bool
-	batch          bool
-	stdin          bool
-	stack          *Stack
-	history        []string
-	completer      readline.AutoCompleter
-	interpreter    *Interpreter
-	Operators      *regexp.Regexp
-	Space          *regexp.Regexp
-	Constants      []string
-	MathFunctions  []string
-	BatchFunctions []string
-	LuaFunctions   []string
+	debug        bool
+	batch        bool
+	stdin        bool
+	stack        *Stack
+	history      []string
+	completer    readline.AutoCompleter
+	interpreter  *Interpreter
+	Space        *regexp.Regexp
+	Constants    []string
+	LuaFunctions []string
 
-	Functions Funcalls
+	Funcalls      Funcalls
+	BatchFuncalls Funcalls
 }
 
 // help for lua functions will be added dynamically
@@ -78,11 +76,8 @@ Math operators:
 // commands, constants and operators,  defined here to feed completion
 // and our mode switch in Eval() dynamically
 const (
-	Commands       string = `dump reverse debug undebug clear batch shift undo help history manual exit quit`
-	Operators      string = `+ - * x / ^ % %- %+`
-	MathFunctions  string = `sqrt remainder`
-	Constants      string = `Pi Phi Sqrt2 SqrtE SqrtPi SqrtPhi Ln2 Log2E Ln10 Log10E`
-	BatchFunctions string = `median avg mean max min`
+	Commands  string = `dump reverse debug undebug clear batch shift undo help history manual exit quit`
+	Constants string = `Pi Phi Sqrt2 SqrtE SqrtPi SqrtPhi Ln2 Log2E Ln10 Log10E`
 )
 
 // That way we can add custom functions to completion
@@ -95,41 +90,45 @@ func GetCompleteCustomFunctions() func(string) []string {
 		}
 
 		completions = append(completions, strings.Split(Commands, " ")...)
-		completions = append(completions, strings.Split(Operators, " ")...)
-		completions = append(completions, strings.Split(MathFunctions, " ")...)
 		completions = append(completions, strings.Split(Constants, " ")...)
 
 		return completions
 	}
 }
 
+func (c *Calc) GetCompleteCustomFuncalls() func(string) []string {
+	return func(line string) []string {
+		completions := []string{}
+
+		for function := range c.Funcalls {
+			completions = append(completions, function)
+		}
+
+		for function := range c.BatchFuncalls {
+			completions = append(completions, function)
+		}
+
+		return completions
+	}
+
+}
+
 func NewCalc() *Calc {
 	c := Calc{stack: NewStack(), debug: false}
+
+	c.Funcalls = DefineFunctions()
+	c.BatchFuncalls = DefineBatchFunctions()
 
 	c.completer = readline.NewPrefixCompleter(
 		// custom lua functions
 		readline.PcItemDynamic(GetCompleteCustomFunctions()),
+		readline.PcItemDynamic(c.GetCompleteCustomFuncalls()),
 	)
-
-	// pre-calculate mode switching regexes
-	reg := `^[`
-	for _, op := range strings.Split(Operators, " ") {
-		switch op {
-		case "x":
-			reg += op
-		default:
-			reg += `\` + op
-		}
-	}
-	reg += `]$`
-	c.Operators = regexp.MustCompile(reg)
 
 	c.Space = regexp.MustCompile(`\s+`)
 
 	// pre-calculate mode switching arrays
 	c.Constants = strings.Split(Constants, " ")
-	c.MathFunctions = strings.Split(MathFunctions, " ")
-	c.BatchFunctions = strings.Split(BatchFunctions, " ")
 
 	for name := range LuaFuncs {
 		c.LuaFunctions = append(c.LuaFunctions, name)
@@ -189,11 +188,19 @@ func (c *Calc) Eval(line string) {
 			c.stack.Backup()
 			c.stack.Push(num)
 		} else {
-			if c.Operators.MatchString(item) {
-				// simple ops like + or x
-				c.simple(item[0])
-				continue
-			}
+			/*
+				if contains(c.MathFunctions, item) {
+					// go builtin math function, if implemented
+					c.mathfunc(item)
+					continue
+				}
+
+				if contains(c.BatchFunctions, item) {
+					// math functions only supported in batch mode like max or mean
+					c.batchfunc(item)
+					continue
+				}
+			*/
 
 			if contains(c.Constants, item) {
 				// put the constant onto the stack
@@ -202,16 +209,29 @@ func (c *Calc) Eval(line string) {
 				continue
 			}
 
-			if contains(c.MathFunctions, item) {
-				// go builtin math function, if implemented
-				c.mathfunc(item)
+			if _, ok := c.Funcalls[item]; ok {
+				if err := c.DoFuncall(item); err != nil {
+					fmt.Println(err)
+				} else {
+					c.Result()
+				}
 				continue
 			}
 
-			if contains(c.BatchFunctions, item) {
-				// math functions only supported in batch mode like max or mean
-				c.batchfunc(item)
-				continue
+			if c.batch {
+				if _, ok := c.BatchFuncalls[item]; ok {
+					if err := c.DoFuncall(item); err != nil {
+						fmt.Println(err)
+					} else {
+						c.Result()
+					}
+					continue
+				}
+			} else {
+				if _, ok := c.BatchFuncalls[item]; ok {
+					fmt.Println("only supported in batch mode")
+					continue
+				}
 			}
 
 			if contains(c.LuaFunctions, item) {
@@ -266,6 +286,70 @@ func (c *Calc) Eval(line string) {
 	}
 }
 
+// Execute a math function, check if it is defined just in case
+//
+// FIXME:  add a  loop over  DoFuncall() for  non-batch-only functions
+// like + or *
+//
+// FIXME: use R{} as well? or even everywhere, while we're at it?
+func (c *Calc) DoFuncall(funcname string) error {
+	var function *Funcall
+	if c.batch {
+		function = c.BatchFuncalls[funcname]
+	} else {
+		function = c.Funcalls[funcname]
+	}
+
+	var args Numbers
+	batch := false
+
+	if function.Expectargs == -1 {
+		// batch mode, but always < stack len, so check first
+		args = c.stack.All()
+		batch = true
+	} else {
+		//  this is way better behavior than just using 0 in place of
+		// non-existing stack items
+		if c.stack.Len() < function.Expectargs {
+			return errors.New("stack doesn't provide enough arguments")
+		}
+
+		args = c.stack.Last(function.Expectargs)
+	}
+
+	c.Debug(fmt.Sprintf("args: %v", args))
+
+	// the  actual lambda call, so  to say. We provide  a slice of
+	// the requested size, fetched  from the stack (but not popped
+	// yet!)
+	R := function.Func(args)
+
+	if R.Err != nil {
+		// leave the stack untouched in case of any error
+		return R.Err
+	}
+
+	if batch {
+		// get rid of stack
+		c.stack.Clear()
+	} else {
+		// remove operands
+		c.stack.Shift(function.Expectargs)
+	}
+
+	// save result
+	c.stack.Push(R.Res)
+
+	// thanks a lot
+	c.SetHistory(funcname, args, R.Res)
+	return nil
+}
+
+// we need to add a history entry for each operation
+func (c *Calc) SetHistory(op string, args Numbers, res float64) {
+	c.History("%s %s -> %f", list2str(args), op, res)
+}
+
 // just a textual representation of math operations, viewable with the
 // history command
 func (c *Calc) History(format string, args ...any) {
@@ -278,9 +362,9 @@ func (c *Calc) Result() float64 {
 		fmt.Print("= ")
 	}
 
-	fmt.Println(c.stack.Last())
+	fmt.Println(c.stack.Last()[0])
 
-	return c.stack.Last()
+	return c.stack.Last()[0]
 }
 
 func (c *Calc) Debug(msg string) {
@@ -333,122 +417,6 @@ func (c *Calc) simple(op byte) {
 	c.Result()
 }
 
-// calc using go math lib functions
-func (c *Calc) mathfunc(funcname string) {
-	c.stack.Backup()
-
-	for c.stack.Len() > 0 {
-		var x float64
-
-		switch funcname {
-		case "sqrt":
-			a := c.stack.Pop()
-			x = math.Sqrt(a)
-			c.History("sqrt(%f) = %f", a, x)
-
-		case "mod":
-			fallthrough // alias
-		case "remainder":
-			b := c.stack.Pop()
-			a := c.stack.Pop()
-			x = math.Remainder(a, b)
-			c.History("remainderf(%f / %f) = %f", a, b, x)
-
-		case "%":
-			b := c.stack.Pop()
-			a := c.stack.Pop()
-
-			x = (a / 100) * b
-			c.History("%f percent of %f = %f", b, a, x)
-
-		case "%-":
-			b := c.stack.Pop()
-			a := c.stack.Pop()
-
-			x = a - ((a / 100) * b)
-			c.History("%f minus %f percent of %f = %f", a, b, a, x)
-
-		case "%+":
-			b := c.stack.Pop()
-			a := c.stack.Pop()
-
-			x = a + ((a / 100) * b)
-			c.History("%f plus %f percent of %f = %f", a, b, a, x)
-
-		}
-
-		c.stack.Push(x)
-
-		if !c.batch {
-			break
-		}
-	}
-
-	c.Result()
-}
-
-// execute pure batch functions, operating on the whole stack
-func (c *Calc) batchfunc(funcname string) {
-	if !c.batch {
-		fmt.Println("error: only available in batch mode")
-	}
-
-	c.stack.Backup()
-	var x float64
-	count := c.stack.Len()
-
-	switch funcname {
-	case "median":
-		all := []float64{}
-
-		for c.stack.Len() > 0 {
-			all = append(all, c.stack.Pop())
-		}
-
-		middle := count / 2
-
-		x = all[middle]
-		c.History("median(all)")
-
-	case "mean":
-		fallthrough // alias
-	case "avg":
-		var sum float64
-
-		for c.stack.Len() > 0 {
-			sum += c.stack.Pop()
-		}
-
-		x = sum / float64(count)
-		c.History("avg(all)")
-	case "min":
-		x = c.stack.Pop() // initialize with the last one
-
-		for c.stack.Len() > 0 {
-			val := c.stack.Pop()
-			if val < x {
-				x = val
-			}
-		}
-
-		c.History("min(all)")
-	case "max":
-		x = c.stack.Pop() // initialize with the last one
-
-		for c.stack.Len() > 0 {
-			val := c.stack.Pop()
-			if val > x {
-				x = val
-			}
-		}
-
-		c.History("max(all)")
-	}
-
-	c.stack.Push(x)
-	_ = c.Result()
-}
-
 func (c *Calc) luafunc(funcname string) {
 	// called from calc loop
 	var x float64
@@ -456,9 +424,9 @@ func (c *Calc) luafunc(funcname string) {
 
 	switch c.interpreter.FuncNumArgs(funcname) {
 	case 1:
-		x, err = c.interpreter.CallLuaFunc(funcname, []float64{c.stack.Last()})
+		x, err = c.interpreter.CallLuaFunc(funcname, c.stack.Last())
 	case 2:
-		x, err = c.interpreter.CallLuaFunc(funcname, c.stack.LastTwo())
+		x, err = c.interpreter.CallLuaFunc(funcname, c.stack.Last(2))
 	case -1:
 		x, err = c.interpreter.CallLuaFunc(funcname, c.stack.All())
 	default:

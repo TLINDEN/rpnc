@@ -17,7 +17,11 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 package main
 
-import "math"
+import (
+	"fmt"
+	"math"
+	"strings"
+)
 
 // find an item in a list
 func contains(s []string, e string) bool {
@@ -54,4 +58,8 @@ func const2num(name string) float64 {
 	default:
 		return 0
 	}
+}
+
+func list2str(list Numbers) string {
+	return strings.Trim(strings.Join(strings.Fields(fmt.Sprint(list)), " "), "[]")
 }
