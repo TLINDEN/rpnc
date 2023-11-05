@@ -116,20 +116,36 @@ DESCRIPTION
     You can use the shift command to remove the last number from the stack.
 
   BUILTIN OPERATORS AND FUNCTIONS
-    Basic operators: + - x /
+    Basic operators:
 
-    Math functions:
+        +                    add
+        -                    substract
+        /                    divide
+        x                    multiply (alias: *)
+        ^                    power
 
-        sqrt                 square root
-        mod                  remainder of division (alias: remainder)
-        max                  batch mode only: max of all values
-        min                  batch mode only: min of all values
-        mean                 batch mode only: mean of all values (alias: avg)
-        median               batch mode only: median of all values
+    Percent functions:
+
         %                    percent
         %-                   substract percent
         %+                   add percent
-        ^                    power
+
+    Batch functions:
+
+        sum                  sum of all values (alias: +)
+        max                  max of all values
+        min                  min of all values
+        mean                 mean of all values (alias: avg)
+        median               median of all values
+
+    Math functions:
+
+        mod sqrt abs acos acosh asin asinh atan atan2 atanh cbrt ceil cos cosh
+        erf erfc  erfcinv erfinv exp  exp2 expm1 floor  gamma ilogb j0  j1 log
+        log10 log1p log2 logb pow round roundtoeven sin sinh tan tanh trunc y0
+        y1 copysign dim hypot
+
+    Refer to https://pkg.go.dev/math for details about those functions.
 
 EXTENDING RPN USING LUA
     You can use a lua script with lua functions to extend the calculator. By
