@@ -222,17 +222,3 @@ AUTHORS
     Thomas von Dein tom AT vondein DOT org
 
 `
-var usage = `
-
-Usage: rpn [-bdvh] [<operator>]
-
-Options:
-  -b, --batchmode   enable batch mode
-  -d, --debug       enable debug mode
-  -v, --version     show version
-  -h, --help        show help
-
-When <operator>  is given, batch  mode ist automatically  enabled. Use
-this only when working with stdin. E.g.: echo "2 3 4 5" | rpn +
-
-`

@@ -39,10 +39,6 @@ ifdef HAVE_POD
 	  echo "var manpage = \`" >> $*.go
 	  pod2text $*.pod >> $*.go
 	  echo "\`" >> $*.go
-
-	  echo "var usage = \`" >> $*.go
-	  awk '/SYNOPS/{f=1;next} /DESCR/{f=0} f' $*.pod  | sed 's/^    //' >> $*.go
-	  echo "\`" >> $*.go
 endif
 
 buildlocal:
