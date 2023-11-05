@@ -27,6 +27,8 @@ jobs:
   golangci:
     name: lint
     runs-on: ubuntu-latest
+    run:
+      modules-download-mode: vendor
     steps:
       - uses: actions/setup-go@v3
         with:
