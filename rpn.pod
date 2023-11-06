@@ -154,6 +154,21 @@ Math functions:
     log10 log1p log2 logb pow round roundtoeven sin sinh tan tanh trunc y0
     y1 copysign dim hypot
 
+Commands:
+
+    batch                toggle batch mode
+    debug                toggle debug output
+    dump                 display the stack contents
+    clear                clear the whole stack
+    shift                remove the last element of the stack
+    reverse              reverse the stack elements
+    swap                 exchange the last two stack elements
+    show                 show the last 5 items of the stack
+    history              display calculation history
+    help|?               show this message
+    quit|exit|c-d|c-c    exit program
+
+
 Refer to https://pkg.go.dev/math for details about those functions.
 
 =head1 INTERACTIVE REPL
