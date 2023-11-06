@@ -65,6 +65,8 @@ DEBUG(012):      push to stack: 200.00
 = 200
 ```
 
+For a very good explanation how reverse polish notation and the stack works [watch this video by Prof. Brailsford](https://youtu.be/7ha78yWRDlE?si=9MCp59jAAG8fXavP)
+
 ## Usage
 
 Basically   you  enter   numbers  followed   by  an   operator  or   a
