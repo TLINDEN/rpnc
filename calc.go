@@ -20,7 +20,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"math"
 	"os"
 	"regexp"
 	"strconv"
@@ -374,50 +373,6 @@ func (c *Calc) Debug(msg string) {
 	if c.debug {
 		fmt.Printf("DEBUG(calc): %s\n", msg)
 	}
-}
-
-// do simple calculations
-func (c *Calc) simple(op byte) {
-	c.stack.Backup()
-
-	for c.stack.Len() > 1 {
-		b := c.stack.Pop()
-		a := c.stack.Pop()
-		var x float64
-
-		c.Debug(fmt.Sprintf("evaluating: %.2f %c %.2f", a, op, b))
-
-		switch op {
-		case '+':
-			x = a + b
-		case '-':
-			x = a - b
-		case 'x':
-			fallthrough // alias for *
-		case '*':
-			x = a * b
-		case '/':
-			if b == 0 {
-				fmt.Println("error: division by null!")
-				return
-			}
-			x = a / b
-		case '^':
-			x = math.Pow(a, b)
-		default:
-			panic("invalid operator!")
-		}
-
-		c.stack.Push(x)
-
-		c.History("%f %c %f = %f", a, op, b, x)
-
-		if !c.batch {
-			break
-		}
-	}
-
-	c.Result()
 }
 
 func (c *Calc) luafunc(funcname string) {
