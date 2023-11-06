@@ -154,7 +154,64 @@ Math functions:
     log10 log1p log2 logb pow round roundtoeven sin sinh tan tanh trunc y0
     y1 copysign dim hypot
 
+Commands:
+
+    batch                toggle batch mode
+    debug                toggle debug output
+    dump                 display the stack contents
+    clear                clear the whole stack
+    shift                remove the last element of the stack
+    reverse              reverse the stack elements
+    swap                 exchange the last two stack elements
+    show                 show the last 5 items of the stack
+    history              display calculation history
+    help|?               show this message
+    quit|exit|c-d|c-c    exit program
+
+
 Refer to https://pkg.go.dev/math for details about those functions.
+
+=head1 INTERACTIVE REPL
+
+While you can use rpn in the command-line, the best experience you'll
+have is the interactive repl (read eval print loop). Just execute
+C<rpn> and you'll be there.
+
+In interactive mode you can use TAB completion to complete commands,
+operators and functions. There's also a history, which allows you to
+repeat complicated calculations (as long as you've entered them in one
+line).
+
+There are also a lot of key bindings, here are the most important
+ones:
+
+=over
+
+=item ctrl-c + ctrl-d
+
+Exit interactive rpn
+
+=item ctrl-z
+
+Send rpn to the backgound.
+
+=item ctrl-a
+
+Beginning of line.
+
+=item ctrl-e
+
+End of line.
+
+=item ctrl-l
+
+Clear the screen.
+
+=item ctrl-r
+
+Search through history.
+
+=back
 
 =head1 EXTENDING RPN USING LUA
 

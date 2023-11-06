@@ -111,7 +111,9 @@ DESCRIPTION
     switch or debug toggle command), then the backup stack is also being
     displayed.
 
-    The stack can be reversed using the reverse command.
+    The stack can be reversed using the reverse command. However, sometimes
+    only the last two values are in the wrong order. Use the swap command to
+    exchange them.
 
     You can use the shift command to remove the last number from the stack.
 
@@ -145,7 +147,51 @@ DESCRIPTION
         log10 log1p log2 logb pow round roundtoeven sin sinh tan tanh trunc y0
         y1 copysign dim hypot
 
+    Commands:
+
+        batch                toggle batch mode
+        debug                toggle debug output
+        dump                 display the stack contents
+        clear                clear the whole stack
+        shift                remove the last element of the stack
+        reverse              reverse the stack elements
+        swap                 exchange the last two stack elements
+        show                 show the last 5 items of the stack
+        history              display calculation history
+        help|?               show this message
+        quit|exit|c-d|c-c    exit program
+
     Refer to https://pkg.go.dev/math for details about those functions.
+
+INTERACTIVE REPL
+    While you can use rpn in the command-line, the best experience you'll
+    have is the interactive repl (read eval print loop). Just execute "rpn"
+    and you'll be there.
+
+    In interactive mode you can use TAB completion to complete commands,
+    operators and functions. There's also a history, which allows you to
+    repeat complicated calculations (as long as you've entered them in one
+    line).
+
+    There are also a lot of key bindings, here are the most important ones:
+
+    ctrl-c + ctrl-d
+        Exit interactive rpn
+
+    ctrl-z
+        Send rpn to the backgound.
+
+    ctrl-a
+        Beginning of line.
+
+    ctrl-e
+        End of line.
+
+    ctrl-l
+        Clear the screen.
+
+    ctrl-r
+        Search through history.
 
 EXTENDING RPN USING LUA
     You can use a lua script with lua functions to extend the calculator. By
