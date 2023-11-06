@@ -15,10 +15,13 @@ Features:
 - various stack manipulation commands
 - basic math operators
 - advanced math functions (not yet complete)
-- provides interactive repl
 - can be used on the commandline
 - can calculate data in batch mode (also from STDIN)
 - extensible with custom LUA functions
+- provides interactive repl
+- completion
+- history
+
 
 ## Working principle
 
