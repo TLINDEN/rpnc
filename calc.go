@@ -49,6 +49,7 @@ type Calc struct {
 const Help string = `Available commands:
 batch                toggle batch mode
 debug                toggle debug output
+show                 show the last 5 items of the stack
 dump                 display the stack contents
 clear                clear the whole stack
 shift                remove the last element of the stack
@@ -82,7 +83,7 @@ median               median of all values`
 // commands, constants and operators,  defined here to feed completion
 // and our mode switch in Eval() dynamically
 const (
-	Commands  string = `dump reverse debug undebug clear batch shift undo help history manual exit quit swap`
+	Commands  string = `dump reverse debug undebug clear batch shift undo help history manual exit quit swap show`
 	Constants string = `Pi Phi Sqrt2 SqrtE SqrtPi SqrtPhi Ln2 Log2E Ln10 Log10E`
 )
 
@@ -161,6 +162,10 @@ func (c *Calc) ToggleBatch() {
 
 func (c *Calc) ToggleStdin() {
 	c.stdin = !c.stdin
+}
+
+func (c *Calc) ToggleShow() {
+	c.showstack = !c.showstack
 }
 
 func (c *Calc) Prompt() string {
@@ -275,6 +280,8 @@ func (c *Calc) Eval(line string) {
 				for _, entry := range c.history {
 					fmt.Println(entry)
 				}
+			case "show":
+				c.ToggleShow()
 			case "exit":
 				fallthrough
 			case "quit":
