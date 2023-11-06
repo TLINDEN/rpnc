@@ -39,6 +39,7 @@ Usage: rpn [-bdvh] [<operator>]
 Options:
   -b, --batchmode   enable batch mode
   -d, --debug       enable debug mode
+  -s, --stack       show last 5 items of the stack (off by default)
   -m, --manual      show manual
   -v, --version     show version
   -h, --help        show help
@@ -58,6 +59,7 @@ func main() {
 	configfile := ""
 
 	flag.BoolVarP(&calc.batch, "batchmode", "b", false, "batch mode")
+	flag.BoolVarP(&calc.showstack, "showstack", "s", false, "show stack")
 	flag.BoolVarP(&enabledebug, "debug", "d", false, "debug mode")
 	flag.BoolVarP(&showversion, "version", "v", false, "show version")
 	flag.BoolVarP(&showhelp, "help", "h", false, "show usage")

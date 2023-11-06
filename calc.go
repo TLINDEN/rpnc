@@ -32,6 +32,7 @@ type Calc struct {
 	debug        bool
 	batch        bool
 	stdin        bool
+	showstack    bool
 	stack        *Stack
 	history      []string
 	completer    readline.AutoCompleter
@@ -165,11 +166,14 @@ func (c *Calc) ToggleStdin() {
 func (c *Calc) Prompt() string {
 	p := "\033[31m»\033[0m "
 	b := ""
+
 	if c.batch {
 		b = "->batch"
 	}
+
 	d := ""
 	v := ""
+
 	if c.debug {
 		d = "->debug"
 		v = fmt.Sprintf("/rev%d", c.stack.rev)
@@ -281,6 +285,16 @@ func (c *Calc) Eval(line string) {
 				fmt.Println("unknown command or operator!")
 			}
 		}
+	}
+
+	if c.showstack && !c.stdin {
+		dots := ""
+
+		if c.stack.Len() > 5 {
+			dots = "... "
+		}
+		last := c.stack.Last(5)
+		fmt.Printf("stack: %s%s\n", dots, list2str(last))
 	}
 }
 
