@@ -115,6 +115,26 @@ func (s *Stack) Shift(num ...int) {
 	}
 }
 
+func (s *Stack) Swap() {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	if s.linklist.Len() < 2 {
+		return
+	}
+
+	a := s.linklist.Back()
+	s.linklist.Remove(a)
+
+	b := s.linklist.Back()
+	s.linklist.Remove(b)
+
+	s.Debug(fmt.Sprintf("swapping %.2f with %.2f", b.Value, a.Value))
+
+	s.linklist.PushBack(a.Value)
+	s.linklist.PushBack(b.Value)
+}
+
 // Return the last num items from the stack w/o modifying it.
 func (s *Stack) Last(num ...int) []float64 {
 	items := []float64{}
