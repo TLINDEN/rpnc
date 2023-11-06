@@ -1,8 +1,8 @@
+## Programmable command-line calculator using reverse polish notation
+
 [![Actions](https://github.com/tlinden/rpnc/actions/workflows/ci.yaml/badge.svg)](https://github.com/tlinden/rpnc/actions)
 [![License](https://img.shields.io/badge/license-GPL-blue.svg)](https://github.com/tlinden/rpnc/blob/master/LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/tlinden/rpnc)](https://goreportcard.com/report/github.com/tlinden/rpnc) 
-
-## Reverse Polish Notation Calculator for the commandline
 
 This is a small commandline calculator which takes its input in
 [reverse polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation)
@@ -68,6 +68,8 @@ DEBUG(calc): evaluating: 50.00 x 4.00
 DEBUG(012):      push to stack: 200.00
 = 200
 ```
+
+For a very good explanation how reverse polish notation and the stack works [watch this video by Prof. Brailsford](https://youtu.be/7ha78yWRDlE?si=9MCp59jAAG8fXavP)
 
 ## Usage
 
