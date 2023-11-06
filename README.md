@@ -1,4 +1,4 @@
-## Reverse Polish Notation Calculator for the commandline
+## Programmable command-line calculator using reverse polish notation
 
 This is a small commandline calculator which takes its input in
 [reverse polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation)
