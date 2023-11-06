@@ -1,5 +1,9 @@
 ## Programmable command-line calculator using reverse polish notation
 
+[![Actions](https://github.com/tlinden/rpnc/actions/workflows/ci.yaml/badge.svg)](https://github.com/tlinden/rpnc/actions)
+[![License](https://img.shields.io/badge/license-GPL-blue.svg)](https://github.com/tlinden/rpnc/blob/master/LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/tlinden/rpnc)](https://goreportcard.com/report/github.com/tlinden/rpnc) 
+
 This is a small commandline calculator which takes its input in
 [reverse polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation)
 form.

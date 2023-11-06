@@ -20,7 +20,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"math"
 	"os"
 	"regexp"
 	"strconv"
@@ -52,6 +51,8 @@ debug                toggle debug output
 dump                 display the stack contents
 clear                clear the whole stack
 shift                remove the last element of the stack
+reverse              reverse the stack elements
+swap                 exchange the last two elements
 history              display calculation history
 help|?               show this message
 quit|exit|c-d|c-c    exit program
@@ -80,7 +81,7 @@ median               median of all values`
 // commands, constants and operators,  defined here to feed completion
 // and our mode switch in Eval() dynamically
 const (
-	Commands  string = `dump reverse debug undebug clear batch shift undo help history manual exit quit`
+	Commands  string = `dump reverse debug undebug clear batch shift undo help history manual exit quit swap`
 	Constants string = `Pi Phi Sqrt2 SqrtE SqrtPi SqrtPhi Ln2 Log2E Ln10 Log10E`
 )
 
@@ -192,20 +193,6 @@ func (c *Calc) Eval(line string) {
 			c.stack.Backup()
 			c.stack.Push(num)
 		} else {
-			/*
-				if contains(c.MathFunctions, item) {
-					// go builtin math function, if implemented
-					c.mathfunc(item)
-					continue
-				}
-
-				if contains(c.BatchFunctions, item) {
-					// math functions only supported in batch mode like max or mean
-					c.batchfunc(item)
-					continue
-				}
-			*/
-
 			if contains(c.Constants, item) {
 				// put the constant onto the stack
 				c.stack.Backup()
@@ -271,6 +258,13 @@ func (c *Calc) Eval(line string) {
 			case "reverse":
 				c.stack.Backup()
 				c.stack.Reverse()
+			case "swap":
+				if c.stack.Len() < 2 {
+					fmt.Println("stack too small, can't swap")
+				} else {
+					c.stack.Backup()
+					c.stack.Swap()
+				}
 			case "undo":
 				c.stack.Restore()
 			case "history":
@@ -374,50 +368,6 @@ func (c *Calc) Debug(msg string) {
 	if c.debug {
 		fmt.Printf("DEBUG(calc): %s\n", msg)
 	}
-}
-
-// do simple calculations
-func (c *Calc) simple(op byte) {
-	c.stack.Backup()
-
-	for c.stack.Len() > 1 {
-		b := c.stack.Pop()
-		a := c.stack.Pop()
-		var x float64
-
-		c.Debug(fmt.Sprintf("evaluating: %.2f %c %.2f", a, op, b))
-
-		switch op {
-		case '+':
-			x = a + b
-		case '-':
-			x = a - b
-		case 'x':
-			fallthrough // alias for *
-		case '*':
-			x = a * b
-		case '/':
-			if b == 0 {
-				fmt.Println("error: division by null!")
-				return
-			}
-			x = a / b
-		case '^':
-			x = math.Pow(a, b)
-		default:
-			panic("invalid operator!")
-		}
-
-		c.stack.Push(x)
-
-		c.History("%f %c %f = %f", a, op, b, x)
-
-		if !c.batch {
-			break
-		}
-	}
-
-	c.Result()
 }
 
 func (c *Calc) luafunc(funcname string) {

@@ -116,7 +116,9 @@ You can use B<dump> to display the stack. If debugging
 is enabled (C<-d> switch or B<debug> toggle command), then the backup
 stack is also being displayed.
 
-The stack can be reversed using the B<reverse> command.
+The  stack can  be  reversed using  the  B<reverse> command.  However,
+sometimes only  the last two  values are in  the wrong order.  Use the
+B<swap> command to exchange them.
 
 You can use the B<shift> command to remove the last number from the
 stack.
