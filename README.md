@@ -21,6 +21,7 @@ Features:
 - provides interactive repl
 - completion
 - history
+- comments (comment character is `#`)
 
 
 ## Working principle
