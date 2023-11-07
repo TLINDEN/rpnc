@@ -57,8 +57,8 @@ test:
 	go test -v ./...
 
 singletest:
-	@echo "Call like this: ''make singletest TEST=TestPrepareColumns MOD=lib"
-	go test -run $(TEST) github.com/tlinden/rpn/$(MOD)
+	@echo "Call like this: ''make singletest TEST=TestPrepareColumns"
+	go test -run $(TEST)
 
 cover-report:
 	go test ./... -cover -coverprofile=coverage.out
