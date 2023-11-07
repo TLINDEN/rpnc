@@ -38,6 +38,7 @@ type Calc struct {
 	completer    readline.AutoCompleter
 	interpreter  *Interpreter
 	Space        *regexp.Regexp
+	Comment      *regexp.Regexp
 	Constants    []string
 	LuaFunctions []string
 
@@ -133,6 +134,7 @@ func NewCalc() *Calc {
 	)
 
 	c.Space = regexp.MustCompile(`\s+`)
+	c.Comment = regexp.MustCompile(`#.*`) // ignore everything after #
 
 	// pre-calculate mode switching arrays
 	c.Constants = strings.Split(Constants, " ")
@@ -189,7 +191,8 @@ func (c *Calc) Prompt() string {
 
 // the actual work horse, evaluate a line of calc command[s]
 func (c *Calc) Eval(line string) {
-	line = strings.TrimSpace(line)
+	// remove surrounding whitespace and comments, if any
+	line = strings.TrimSpace(c.Comment.ReplaceAllString(line, ""))
 
 	if line == "" {
 		return

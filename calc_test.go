@@ -22,6 +22,79 @@ import (
 	"testing"
 )
 
+func TestCommentsAndWhitespace(t *testing.T) {
+	calc := NewCalc()
+
+	var tests = []struct {
+		name string
+		cmd  []string
+		exp  float64 // last element of the stack
+	}{
+		{
+			name: "whitespace prefix",
+			cmd:  []string{"  5"},
+			exp:  5.0,
+		},
+		{
+			name: "whitespace postfix",
+			cmd:  []string{"5  "},
+			exp:  5.0,
+		},
+		{
+			name: "whitespace both",
+			cmd:  []string{"  5   "},
+			exp:  5.0,
+		},
+		{
+			name: "comment line w/ spaces",
+			cmd:  []string{"5", "   #   19"},
+			exp:  5.0,
+		},
+		{
+			name: "comment line w/o spaces",
+			cmd:  []string{"5", `#19`},
+			exp:  5.0,
+		},
+		{
+			name: "inline comment w/ spaces",
+			cmd:  []string{"5   #   19"},
+			exp:  5.0,
+		},
+		{
+			name: "inline comment w/o spaces",
+			cmd:  []string{"5#19"},
+			exp:  5.0,
+		},
+	}
+
+	for _, tt := range tests {
+		testname := fmt.Sprintf("%s .(expect %.2f)",
+			tt.name, tt.exp)
+
+		t.Run(testname, func(t *testing.T) {
+			for _, line := range tt.cmd {
+				calc.Eval(line)
+			}
+			got := calc.stack.Last()
+
+			if len(got) > 0 {
+				if got[0] != tt.exp {
+					t.Errorf("parsing failed:\n+++  got: %f\n--- want: %f",
+						got, tt.exp)
+				}
+			}
+
+			if calc.stack.Len() != 1 {
+				t.Errorf("invalid stack size:\n+++  got: %d\n--- want: 1",
+					calc.stack.Len())
+			}
+
+		})
+
+		calc.stack.Clear()
+	}
+}
+
 func TestCalc(t *testing.T) {
 	calc := NewCalc()
 
