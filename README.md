@@ -22,6 +22,9 @@ Features:
 - completion
 - history
 
+## Demo
+
+![asciicast](demo/demo.gif)
 
 ## Working principle
 
