@@ -1,0 +1,18 @@
+# demo sessions, used to create an interactive rpn recording
+
+# part 1: interactive
+
+# put some numbers onto the stack
+2 4 6
+8
+10
+
+# take a look at the stack
+dump
+
+# add the last 2
++
+
+# multiply the result and the previous
+*
+

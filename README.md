@@ -23,6 +23,9 @@ Features:
 - history
 - comments (comment character is `#`)
 
+## Demo
+
+![asciicast](demo/demo.gif)
 
 ## Working principle
 
