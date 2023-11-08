@@ -98,8 +98,9 @@ func main() {
 	// our config file is interpreted  as lua code, only functions can
 	// be defined, init() will be called by InitLua().
 	if _, err := os.Stat(configfile); err == nil {
-		I := InitLua(configfile, enabledebug)
-		calc.SetInt(I)
+		luarunner := NewInterpreter(configfile, enabledebug)
+		luarunner.InitLua()
+		calc.SetInt(luarunner)
 	}
 
 	if len(flag.Args()) > 1 {

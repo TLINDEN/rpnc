@@ -25,7 +25,8 @@ import (
 )
 
 type Interpreter struct {
-	debug bool
+	debug  bool
+	script string
 }
 
 // LUA interpreter, instanciated in main()
@@ -42,8 +43,12 @@ type LuaFunction struct {
 // have access to the interpreter instance
 var LuaFuncs map[string]LuaFunction
 
+func NewInterpreter(script string, debug bool) *Interpreter {
+	return &Interpreter{debug: debug, script: script}
+}
+
 // initialize the lua environment properly
-func InitLua(config string, debug bool) *Interpreter {
+func (i *Interpreter) InitLua() {
 	// we only  load a subset of lua Open  modules and don't allow
 	// net, system or io stuff
 	for _, pair := range []struct {
@@ -66,7 +71,7 @@ func InitLua(config string, debug bool) *Interpreter {
 	}
 
 	// load the lua config (which we expect to contain init() and math functions)
-	if err := L.DoFile(config); err != nil {
+	if err := L.DoFile(i.script); err != nil {
 		panic(err)
 	}
 
@@ -84,8 +89,6 @@ func InitLua(config string, debug bool) *Interpreter {
 	}); err != nil {
 		panic(err)
 	}
-
-	return &Interpreter{debug: debug}
 }
 
 func (i *Interpreter) Debug(msg string) {
@@ -113,6 +116,8 @@ func (i *Interpreter) CallLuaFunc(funcname string, items []float64) (float64, er
 		funcname, LuaFuncs[funcname].numargs))
 
 	switch LuaFuncs[funcname].numargs {
+	case 0:
+		fallthrough
 	case 1:
 		// 1 arg variant
 		if err := L.CallByParam(lua.P{
