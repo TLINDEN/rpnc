@@ -33,6 +33,8 @@ type Calc struct {
 	batch        bool
 	stdin        bool
 	showstack    bool
+	intermediate bool
+	notdone      bool // set to true as long as there are items left in the eval loop
 	stack        *Stack
 	history      []string
 	completer    readline.AutoCompleter
@@ -208,7 +210,15 @@ func (c *Calc) Eval(line string) {
 		return
 	}
 
-	for _, item := range c.Space.Split(line, -1) {
+	items := c.Space.Split(line, -1)
+
+	for pos, item := range items {
+		if pos+1 < len(items) {
+			c.notdone = true
+		} else {
+			c.notdone = false
+		}
+
 		num, err := strconv.ParseFloat(item, 64)
 
 		if err == nil {
@@ -412,11 +422,16 @@ func (c *Calc) History(format string, args ...any) {
 
 // print the result
 func (c *Calc) Result() float64 {
-	if !c.stdin {
-		fmt.Print("= ")
-	}
+	// we only  print the result if it's either  a final result or
+	// (if it is intermediate) if -i has been given
+	if c.intermediate || !c.notdone {
+		// only needed in repl
+		if !c.stdin {
+			fmt.Print("= ")
+		}
 
-	fmt.Println(c.stack.Last()[0])
+		fmt.Println(c.stack.Last()[0])
+	}
 
 	return c.stack.Last()[0]
 }
