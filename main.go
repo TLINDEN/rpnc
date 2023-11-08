@@ -30,19 +30,20 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-const VERSION string = "2.0.4"
+const VERSION string = "2.0.5"
 
 const Usage string = `This is rpn, a reverse polish notation calculator cli.
 
 Usage: rpn [-bdvh] [<operator>]
 
 Options:
-  -b, --batchmode   enable batch mode
-  -d, --debug       enable debug mode
-  -s, --stack       show last 5 items of the stack (off by default)
-  -m, --manual      show manual
-  -v, --version     show version
-  -h, --help        show help
+  -b, --batchmode     enable batch mode
+  -d, --debug         enable debug mode
+  -s, --stack         show last 5 items of the stack (off by default)
+  -i  --intermediate  print intermediate results
+  -m, --manual        show manual
+  -v, --version       show version
+  -h, --help          show help
 
 When <operator>  is given, batch  mode ist automatically  enabled. Use
 this only when working with stdin. E.g.: echo "2 3 4 5" | rpn +
@@ -59,7 +60,9 @@ func main() {
 	configfile := ""
 
 	flag.BoolVarP(&calc.batch, "batchmode", "b", false, "batch mode")
-	flag.BoolVarP(&calc.showstack, "showstack", "s", false, "show stack")
+	flag.BoolVarP(&calc.showstack, "show-stack", "s", false, "show stack")
+	flag.BoolVarP(&calc.intermediate, "showin-termediate", "i", false,
+		"show intermediate results")
 	flag.BoolVarP(&enabledebug, "debug", "d", false, "debug mode")
 	flag.BoolVarP(&showversion, "version", "v", false, "show version")
 	flag.BoolVarP(&showhelp, "help", "h", false, "show usage")

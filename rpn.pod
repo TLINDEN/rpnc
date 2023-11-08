@@ -1,16 +1,19 @@
 =head1 NAME 
 
-rpn - Reverse Polish Notation Calculator for the commandline
+rpn - Programmable command-line calculator using reverse polish notation
 
 =head1 SYNOPSIS
 
     Usage: rpn [-bdvh] [<operator>]
     
     Options:
-      -b, --batchmode   enable batch mode
-      -d, --debug       enable debug mode
-      -v, --version     show version
-      -h, --help        show help
+      -b, --batchmode     enable batch mode
+      -d, --debug         enable debug mode
+      -s, --stack         show last 5 items of the stack (off by default)
+      -i  --intermediate  print intermediate results
+      -m, --manual        show manual
+      -v, --version       show version
+      -h, --help          show help
     
     When <operator>  is given, batch  mode ist automatically  enabled. Use
     this only when working with stdin. E.g.: echo "2 3 4 5" | rpn +
