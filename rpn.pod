@@ -172,6 +172,11 @@ Commands:
     quit|exit|c-d|c-c    exit program
 
 
+Register variables:
+
+    >NAME                Put last stack element into variable NAME
+    <NAME                Retrieve variable NAME and put onto stack
+
 Refer to https://pkg.go.dev/math for details about those functions.
 
 =head1 INTERACTIVE REPL
@@ -225,6 +230,15 @@ append comments to rpn input, e.g.:
    123   # another comment
 
 In this case only 123 will be added to the stack.
+
+=head1 VARIABLES
+
+You can register the last item  of the stack into a variable. Variable
+names must be  all caps. Use the  ">NAME" command to put  a value into
+variable "NAME". Use "<NAME" to  retrieve the value of variable "NAME"
+and put it onto the stack.
+
+The command B<vars> can be used to get a list of all variables.
 
 =head1 EXTENDING RPN USING LUA
 

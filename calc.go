@@ -41,11 +41,14 @@ type Calc struct {
 	interpreter  *Interpreter
 	Space        *regexp.Regexp
 	Comment      *regexp.Regexp
+	Register     *regexp.Regexp
 	Constants    []string
 	LuaFunctions []string
 
 	Funcalls      Funcalls
 	BatchFuncalls Funcalls
+
+	Vars map[string]float64
 }
 
 // help for lua functions will be added dynamically
@@ -58,6 +61,7 @@ clear                clear the whole stack
 shift                remove the last element of the stack
 reverse              reverse the stack elements
 swap                 exchange the last two elements
+vars                 show list of variables
 history              display calculation history
 help|?               show this message
 quit|exit|c-d|c-c    exit program
@@ -81,12 +85,16 @@ sum                  sum of all values (alias: +)
 max                  max of all values
 min                  min of all values
 mean                 mean of all values (alias: avg)
-median               median of all values`
+median               median of all values
+
+Register variables:
+>NAME                Put last stack element into variable NAME
+<NAME                Retrieve variable NAME and put onto stack`
 
 // commands, constants and operators,  defined here to feed completion
 // and our mode switch in Eval() dynamically
 const (
-	Commands  string = `dump reverse debug undebug clear batch shift undo help history manual exit quit swap show`
+	Commands  string = `dump reverse debug undebug clear batch shift undo help history manual exit quit swap show vars`
 	Constants string = `Pi Phi Sqrt2 SqrtE SqrtPi SqrtPhi Ln2 Log2E Ln10 Log10E`
 )
 
@@ -128,6 +136,7 @@ func NewCalc() *Calc {
 
 	c.Funcalls = DefineFunctions()
 	c.BatchFuncalls = DefineBatchFunctions()
+	c.Vars = map[string]float64{}
 
 	c.completer = readline.NewPrefixCompleter(
 		// custom lua functions
@@ -137,6 +146,7 @@ func NewCalc() *Calc {
 
 	c.Space = regexp.MustCompile(`\s+`)
 	c.Comment = regexp.MustCompile(`#.*`) // ignore everything after #
+	c.Register = regexp.MustCompile(`^([<>])([A-Z][A-Z0-9]*)`)
 
 	// pre-calculate mode switching arrays
 	c.Constants = strings.Split(Constants, " ")
@@ -253,15 +263,28 @@ func (c *Calc) Eval(line string) {
 				continue
 			}
 
+			regmatches := c.Register.FindStringSubmatch(item)
+			if len(regmatches) == 3 {
+				switch regmatches[1] {
+				case ">":
+					c.PutVar(regmatches[2])
+				case "<":
+					c.GetVar(regmatches[2])
+				}
+				continue
+			}
+
 			// management commands
 			switch item {
 			case "?":
 				fallthrough
 			case "help":
 				fmt.Println(Help)
-				fmt.Println("Lua functions:")
-				for name, function := range LuaFuncs {
-					fmt.Printf("%-20s %s\n", name, function.help)
+				if len(LuaFuncs) > 0 {
+					fmt.Println("Lua functions:")
+					for name, function := range LuaFuncs {
+						fmt.Printf("%-20s %s\n", name, function.help)
+					}
 				}
 			case "dump":
 				c.stack.Dump()
@@ -301,6 +324,16 @@ func (c *Calc) Eval(line string) {
 				os.Exit(0)
 			case "manual":
 				man()
+			case "vars":
+				if len(c.Vars) > 0 {
+					fmt.Printf("%-20s     %s\n", "VARIABLE", "VALUE")
+					for k, v := range c.Vars {
+						fmt.Printf("%-20s  -> %.2f\n", k, v)
+					}
+				} else {
+					fmt.Println("no vars registered")
+				}
+
 			default:
 				fmt.Println("unknown command or operator!")
 			}
@@ -448,4 +481,25 @@ func (c *Calc) luafunc(funcname string) {
 	c.stack.Push(x)
 
 	c.Result()
+}
+
+func (c *Calc) PutVar(name string) {
+	last := c.stack.Last()
+
+	if len(last) == 1 {
+		c.Debug(fmt.Sprintf("register %.2f in %s", last[0], name))
+		c.Vars[name] = last[0]
+	} else {
+		fmt.Println("empty stack")
+	}
+}
+
+func (c *Calc) GetVar(name string) {
+	if _, ok := c.Vars[name]; ok {
+		c.Debug(fmt.Sprintf("retrieve %.2f from %s", c.Vars[name], name))
+		c.stack.Backup()
+		c.stack.Push(c.Vars[name])
+	} else {
+		fmt.Println("variable doesn't exist")
+	}
 }

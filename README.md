@@ -22,6 +22,7 @@ Features:
 - completion
 - history
 - comments (comment character is `#`)
+- variables
 
 ## Demo
 
