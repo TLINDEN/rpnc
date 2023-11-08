@@ -2,16 +2,19 @@ package main
 
 var manpage = `
 NAME
-    rpn - Reverse Polish Notation Calculator for the commandline
+    rpn - Programmable command-line calculator using reverse polish notation
 
 SYNOPSIS
         Usage: rpn [-bdvh] [<operator>]
     
         Options:
-          -b, --batchmode   enable batch mode
-          -d, --debug       enable debug mode
-          -v, --version     show version
-          -h, --help        show help
+          -b, --batchmode     enable batch mode
+          -d, --debug         enable debug mode
+          -s, --stack         show last 5 items of the stack (off by default)
+          -i  --intermediate  print intermediate results
+          -m, --manual        show manual
+          -v, --version       show version
+          -h, --help          show help
     
         When <operator>  is given, batch  mode ist automatically  enabled. Use
         this only when working with stdin. E.g.: echo "2 3 4 5" | rpn +
@@ -192,6 +195,15 @@ INTERACTIVE REPL
 
     ctrl-r
         Search through history.
+
+COMMENTS
+    Lines starting with "#" are being ignored as comments. You can also
+    append comments to rpn input, e.g.:
+
+       # a comment
+       123   # another comment
+
+    In this case only 123 will be added to the stack.
 
 EXTENDING RPN USING LUA
     You can use a lua script with lua functions to extend the calculator. By
