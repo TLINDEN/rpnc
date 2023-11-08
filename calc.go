@@ -151,16 +151,16 @@ func NewCalc() *Calc {
 	// pre-calculate mode switching arrays
 	c.Constants = strings.Split(Constants, " ")
 
-	for name := range LuaFuncs {
-		c.LuaFunctions = append(c.LuaFunctions, name)
-	}
-
 	return &c
 }
 
-// setup the interpreter, called from main()
+// setup the interpreter, called from main(), import lua functions
 func (c *Calc) SetInt(I *Interpreter) {
 	c.interpreter = I
+
+	for name := range LuaFuncs {
+		c.LuaFunctions = append(c.LuaFunctions, name)
+	}
 }
 
 func (c *Calc) ToggleDebug() {
@@ -448,6 +448,8 @@ func (c *Calc) luafunc(funcname string) {
 	var err error
 
 	switch c.interpreter.FuncNumArgs(funcname) {
+	case 0:
+		fallthrough
 	case 1:
 		x, err = c.interpreter.CallLuaFunc(funcname, c.stack.Last())
 	case 2:
@@ -465,7 +467,15 @@ func (c *Calc) luafunc(funcname string) {
 
 	c.stack.Backup()
 
+	dopush := true
+
 	switch c.interpreter.FuncNumArgs(funcname) {
+	case 0:
+		a := c.stack.Last()
+		if len(a) == 1 {
+			c.History("%s(%f) = %f", funcname, a, x)
+		}
+		dopush = false
 	case 1:
 		a := c.stack.Pop()
 		c.History("%s(%f) = %f", funcname, a, x)
@@ -478,7 +488,9 @@ func (c *Calc) luafunc(funcname string) {
 		c.History("%s(*) = %f", funcname, x)
 	}
 
-	c.stack.Push(x)
+	if dopush {
+		c.stack.Push(x)
+	}
 
 	c.Result()
 }

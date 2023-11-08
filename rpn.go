@@ -210,7 +210,6 @@ COMMENTS
 
     In this case only 123 will be added to the stack.
 
-
 VARIABLES
     You can register the last item of the stack into a variable. Variable
     names must be all caps. Use the ">NAME" command to put a value into
@@ -245,8 +244,13 @@ EXTENDING RPN USING LUA
 
     *   function name
 
-    *   number of arguments expected (1,2 or -1 allowed), -1 means batch
-        mode.
+    *   number of arguments expected (see below)
+
+        Number of expected arguments can be:
+
+            - 0: expect 1 argument but do NOT modify the stack
+            - 1-n: do a singular calculation
+            - -1: batch mode work with all numbers on the stack
 
     *   help text
 

@@ -225,9 +225,14 @@ the `register()` function to register your functions to the
 calculator. This function takes these parameters:
 
 - function name
-- number of arguments expected (1,2 or -1 allowed), -1 means batch
-  mode
+- number of arguments expected (see below)
 - help text
+
+Number of expected arguments can be:
+
+- 0: expect 1 argument but do NOT modify the stack
+- 1-n: do a singular calculation
+- -1: batch mode work with all numbers on the stack 
 
 Please [refer to the lua language
 reference](https://www.lua.org/manual/5.4/) for more details about
