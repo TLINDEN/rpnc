@@ -161,6 +161,11 @@ DESCRIPTION
         help|?               show this message
         quit|exit|c-d|c-c    exit program
 
+    Register variables:
+
+        >NAME                Put last stack element into variable NAME
+        <NAME                Retrieve variable NAME and put onto stack
+
     Refer to https://pkg.go.dev/math for details about those functions.
 
 INTERACTIVE REPL
@@ -192,6 +197,23 @@ INTERACTIVE REPL
 
     ctrl-r
         Search through history.
+
+COMMENTS
+    Lines starting with "#" are being ignored as comments. You can also
+    append comments to rpn input, e.g.:
+
+       # a comment
+       123   # another comment
+
+    In this case only 123 will be added to the stack.
+
+VARIABLES
+    You can register the last item of the stack into a variable. Variable
+    names must be all caps. Use the ">NAME" command to put a value into
+    variable "NAME". Use "<NAME" to retrieve the value of variable "NAME"
+    and put it onto the stack.
+
+    The command vars can be used to get a list of all variables.
 
 EXTENDING RPN USING LUA
     You can use a lua script with lua functions to extend the calculator. By
