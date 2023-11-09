@@ -198,10 +198,14 @@ func (s *Stack) Backup() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
+	s.Debug(fmt.Sprintf("backing up %d items from rev %d",
+		s.linklist.Len(), s.rev))
+
 	s.backup = list.List{}
 	for e := s.linklist.Front(); e != nil; e = e.Next() {
 		s.backup.PushBack(e.Value.(float64))
 	}
+
 	s.backuprev = s.rev
 }
 

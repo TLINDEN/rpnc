@@ -236,6 +236,11 @@ func TestCalc(t *testing.T) {
 			exp:   2,
 			batch: true,
 		},
+		{
+			name: "undo",
+			cmd:  `4 4 + undo *`,
+			exp:  16,
+		},
 	}
 
 	for _, tt := range tests {

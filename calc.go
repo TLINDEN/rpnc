@@ -393,6 +393,10 @@ func (c *Calc) DoFuncall(funcname string) error {
 		return R.Err
 	}
 
+	// don't forget to backup!
+	c.stack.Backup()
+
+	// "pop"
 	if batch {
 		// get rid of stack
 		c.stack.Clear()
