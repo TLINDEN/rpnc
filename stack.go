@@ -195,14 +195,20 @@ func (s *Stack) Backup() {
 	// make a backup, because the elements in list.List{} are pointers
 	// and lead to unexpected  results. The methid here works reliably
 	// at least.
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	s.backup = list.List{}
 	for e := s.linklist.Front(); e != nil; e = e.Next() {
-		s.backup.PushBack(e.Value)
+		s.backup.PushBack(e.Value.(float64))
 	}
 	s.backuprev = s.rev
 }
 
 func (s *Stack) Restore() {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	if s.rev == 0 {
 		fmt.Println("error: stack is empty.")
 		return
@@ -211,15 +217,26 @@ func (s *Stack) Restore() {
 	s.Debug(fmt.Sprintf("restoring stack to revision %d", s.backuprev))
 
 	s.rev = s.backuprev
-	s.linklist = s.backup
+
+	s.linklist = list.List{}
+	for e := s.backup.Front(); e != nil; e = e.Next() {
+		s.linklist.PushBack(e.Value.(float64))
+	}
 }
 
 func (s *Stack) Reverse() {
-	newstack := list.List{}
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	items := []float64{}
 
 	for e := s.linklist.Front(); e != nil; e = e.Next() {
-		newstack.PushFront(e.Value)
+		tail := s.linklist.Back()
+		items = append(items, tail.Value.(float64))
+		s.linklist.Remove(tail)
 	}
 
-	s.linklist = newstack
+	for i := len(items) - 1; i >= 0; i-- {
+		s.linklist.PushFront(items[i])
+	}
 }
