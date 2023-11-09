@@ -20,6 +20,8 @@ package main
 import (
 	"fmt"
 	"testing"
+
+	lua "github.com/yuin/gopher-lua"
 )
 
 func TestCommentsAndWhitespace(t *testing.T) {
@@ -104,6 +106,7 @@ func TestCalc(t *testing.T) {
 		exp   float64
 		batch bool
 	}{
+		// ops
 		{
 			name: "plus",
 			cmd:  `15 15 +`,
@@ -144,6 +147,8 @@ func TestCalc(t *testing.T) {
 			cmd:  `400 20 %+`,
 			exp:  480,
 		},
+
+		// math tests
 		{
 			name: "mod",
 			cmd:  `9 2 mod`,
@@ -164,6 +169,20 @@ func TestCalc(t *testing.T) {
 			cmd:  `6 4 dim`,
 			exp:  2,
 		},
+
+		// constants tests
+		{
+			name: "pitimes2",
+			cmd:  `Pi 2 *`,
+			exp:  6.283185307179586,
+		},
+		{
+			name: "pi+sqrt2",
+			cmd:  `Pi Sqrt2 +`,
+			exp:  4.555806215962888,
+		},
+
+		// batch tests
 		{
 			name:  "batch-sum",
 			cmd:   `2 2 2 2 sum`,
@@ -194,6 +213,34 @@ func TestCalc(t *testing.T) {
 			exp:   5,
 			batch: true,
 		},
+
+		// stack tests
+		{
+			name: "use-vars",
+			cmd:  `10 >TEN clear 5 <TEN *`,
+			exp:  50,
+		},
+		{
+			name: "reverse",
+			cmd:  `100 500 reverse -`,
+			exp:  400,
+		},
+		{
+			name: "swap",
+			cmd:  `2 16 swap /`,
+			exp:  8,
+		},
+		{
+			name:  "clear batch",
+			cmd:   "1 1 1 1 1 clear 1 1 sum",
+			exp:   2,
+			batch: true,
+		},
+		{
+			name: "undo",
+			cmd:  `4 4 + undo *`,
+			exp:  16,
+		},
 	}
 
 	for _, tt := range tests {
@@ -208,6 +255,58 @@ func TestCalc(t *testing.T) {
 			if got != tt.exp {
 				t.Errorf("calc failed:\n+++  got: %f\n--- want: %f",
 					got, tt.exp)
+			}
+		})
+	}
+}
+
+func TestCalcLua(t *testing.T) {
+	var tests = []struct {
+		function string
+		stack    []float64
+		exp      float64
+	}{
+		{
+			function: "lower",
+			stack:    []float64{5, 6},
+			exp:      5.0,
+		},
+		{
+			function: "parallelresistance",
+			stack:    []float64{100, 200, 300},
+			exp:      54.54545454545455,
+		},
+	}
+
+	calc := NewCalc()
+	L = lua.NewState(lua.Options{SkipOpenLibs: true})
+	defer L.Close()
+
+	luarunner := NewInterpreter("example.lua", false)
+	luarunner.InitLua()
+	calc.SetInt(luarunner)
+
+	for _, tt := range tests {
+		testname := fmt.Sprintf("lua-%s", tt.function)
+
+		t.Run(testname, func(t *testing.T) {
+			calc.stack.Clear()
+			for _, item := range tt.stack {
+				calc.stack.Push(item)
+			}
+
+			calc.EvalLuaFunction(tt.function)
+
+			got := calc.stack.Last()
+
+			if calc.stack.Len() != 1 {
+				t.Errorf("invalid stack size:\n+++  got: %d\n--- want: 1",
+					calc.stack.Len())
+			}
+
+			if got[0] != tt.exp {
+				t.Errorf("lua function %s failed:\n+++  got: %f\n--- want: %f",
+					tt.function, got, tt.exp)
 			}
 		})
 	}

@@ -259,7 +259,7 @@ func (c *Calc) Eval(line string) {
 
 			if contains(c.LuaFunctions, item) {
 				// user provided custom lua functions
-				c.luafunc(item)
+				c.EvalLuaFunction(item)
 				continue
 			}
 
@@ -393,6 +393,10 @@ func (c *Calc) DoFuncall(funcname string) error {
 		return R.Err
 	}
 
+	// don't forget to backup!
+	c.stack.Backup()
+
+	// "pop"
 	if batch {
 		// get rid of stack
 		c.stack.Clear()
@@ -442,7 +446,7 @@ func (c *Calc) Debug(msg string) {
 	}
 }
 
-func (c *Calc) luafunc(funcname string) {
+func (c *Calc) EvalLuaFunction(funcname string) {
 	// called from calc loop
 	var x float64
 	var err error
