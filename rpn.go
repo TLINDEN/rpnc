@@ -152,14 +152,14 @@ DESCRIPTION
 
     Commands:
 
-        batch                toggle batch mode
-        debug                toggle debug output
+        [no]batch            toggle batch mode (nobatch turns it off)
+        [no]debug            toggle debug output (nodebug turns it off)
+        [no]showstack        show the last 5 items of the stack (noshowtack turns it off)
         dump                 display the stack contents
         clear                clear the whole stack
         shift                remove the last element of the stack
         reverse              reverse the stack elements
         swap                 exchange the last two stack elements
-        show                 show the last 5 items of the stack
         history              display calculation history
         help|?               show this message
         quit|exit|c-d|c-c    exit program
