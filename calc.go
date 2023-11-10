@@ -53,9 +53,9 @@ type Calc struct {
 
 // help for lua functions will be added dynamically
 const Help string = `Available commands:
-batch                toggle batch mode
-debug                toggle debug output
-show                 show the last 5 items of the stack
+batch                toggle batch mode (nobatch turns it off)
+debug                toggle debug output (nodebug turns it off)
+showstack            toggle show last 5 items of the stack (noshowtack turns it off)
 dump                 display the stack contents
 clear                clear the whole stack
 shift                remove the last element of the stack
@@ -94,7 +94,7 @@ Register variables:
 // commands, constants and operators,  defined here to feed completion
 // and our mode switch in Eval() dynamically
 const (
-	Commands  string = `dump reverse debug undebug clear batch shift undo help history manual exit quit swap show vars`
+	Commands  string = `dump reverse clear shift undo help history manual exit quit swap debug undebug nodebug batch nobatch showstack noshowstack vars`
 	Constants string = `Pi Phi Sqrt2 SqrtE SqrtPi SqrtPhi Ln2 Log2E Ln10 Log10E`
 )
 
@@ -290,10 +290,15 @@ func (c *Calc) Eval(line string) {
 				c.stack.Dump()
 			case "debug":
 				c.ToggleDebug()
+			case "nodebug":
+				fallthrough
 			case "undebug":
 				c.debug = false
+				c.stack.debug = false
 			case "batch":
 				c.ToggleBatch()
+			case "nobatch":
+				c.batch = false
 			case "clear":
 				c.stack.Backup()
 				c.stack.Clear()
@@ -316,8 +321,12 @@ func (c *Calc) Eval(line string) {
 				for _, entry := range c.history {
 					fmt.Println(entry)
 				}
+			case "showstack":
+				fallthrough
 			case "show":
 				c.ToggleShow()
+			case "noshowstack":
+				c.showstack = false
 			case "exit":
 				fallthrough
 			case "quit":
