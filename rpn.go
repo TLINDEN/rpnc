@@ -160,6 +160,7 @@ DESCRIPTION
         shift                remove the last element of the stack
         reverse              reverse the stack elements
         swap                 exchange the last two stack elements
+        dup                  duplicate last stack item
         history              display calculation history
         help|?               show this message
         quit|exit|c-d|c-c    exit program
