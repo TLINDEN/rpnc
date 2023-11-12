@@ -20,8 +20,8 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -48,24 +48,17 @@ type Calc struct {
 	Funcalls      Funcalls
 	BatchFuncalls Funcalls
 
+	// different kinds of commands, displays nicer in help output
+	StackCommands    Commands
+	SettingsCommands Commands
+	ShowCommands     Commands
+	Commands         Commands
+
 	Vars map[string]float64
 }
 
 // help for lua functions will be added dynamically
-const Help string = `Available commands:
-batch                toggle batch mode (nobatch turns it off)
-debug                toggle debug output (nodebug turns it off)
-showstack            toggle show last 5 items of the stack (noshowtack turns it off)
-dump                 display the stack contents
-clear                clear the whole stack
-shift                remove the last element of the stack
-reverse              reverse the stack elements
-swap                 exchange the last two elements
-vars                 show list of variables
-history              display calculation history
-help|?               show this message
-quit|exit|c-d|c-c    exit program
-
+const Help string = `
 Operators:
 basic operators: + - x * / ^  (* is an alias of x)
 
@@ -94,7 +87,7 @@ Register variables:
 // commands, constants and operators,  defined here to feed completion
 // and our mode switch in Eval() dynamically
 const (
-	Commands  string = `dump reverse clear shift undo help history manual exit quit swap debug undebug nodebug batch nobatch showstack noshowstack vars`
+	//Commands  string = `dump reverse clear shift undo help history manual exit quit swap debug undebug nodebug batch nobatch showstack noshowstack vars`
 	Constants string = `Pi Phi Sqrt2 SqrtE SqrtPi SqrtPhi Ln2 Log2E Ln10 Log10E`
 )
 
@@ -107,7 +100,6 @@ func GetCompleteCustomFunctions() func(string) []string {
 			completions = append(completions, luafunc)
 		}
 
-		completions = append(completions, strings.Split(Commands, " ")...)
 		completions = append(completions, strings.Split(Constants, " ")...)
 
 		return completions
@@ -124,6 +116,22 @@ func (c *Calc) GetCompleteCustomFuncalls() func(string) []string {
 
 		for function := range c.BatchFuncalls {
 			completions = append(completions, function)
+		}
+
+		for command := range c.SettingsCommands {
+			completions = append(completions, command)
+		}
+
+		for command := range c.ShowCommands {
+			completions = append(completions, command)
+		}
+
+		for command := range c.StackCommands {
+			completions = append(completions, command)
+		}
+
+		for command := range c.Commands {
+			completions = append(completions, command)
 		}
 
 		return completions
@@ -150,6 +158,8 @@ func NewCalc() *Calc {
 
 	// pre-calculate mode switching arrays
 	c.Constants = strings.Split(Constants, " ")
+
+	c.SetCommands()
 
 	return &c
 }
@@ -274,74 +284,32 @@ func (c *Calc) Eval(line string) {
 				continue
 			}
 
-			// management commands
+			// internal commands
+			if _, ok := c.Commands[item]; ok {
+				c.Commands[item].Func(c)
+				continue
+			}
+
+			if _, ok := c.ShowCommands[item]; ok {
+				c.ShowCommands[item].Func(c)
+				continue
+			}
+
+			if _, ok := c.StackCommands[item]; ok {
+				c.StackCommands[item].Func(c)
+				continue
+			}
+
+			if _, ok := c.SettingsCommands[item]; ok {
+				c.SettingsCommands[item].Func(c)
+				continue
+			}
+
 			switch item {
 			case "?":
 				fallthrough
 			case "help":
-				fmt.Println(Help)
-				if len(LuaFuncs) > 0 {
-					fmt.Println("Lua functions:")
-					for name, function := range LuaFuncs {
-						fmt.Printf("%-20s %s\n", name, function.help)
-					}
-				}
-			case "dump":
-				c.stack.Dump()
-			case "debug":
-				c.ToggleDebug()
-			case "nodebug":
-				fallthrough
-			case "undebug":
-				c.debug = false
-				c.stack.debug = false
-			case "batch":
-				c.ToggleBatch()
-			case "nobatch":
-				c.batch = false
-			case "clear":
-				c.stack.Backup()
-				c.stack.Clear()
-			case "shift":
-				c.stack.Backup()
-				c.stack.Shift()
-			case "reverse":
-				c.stack.Backup()
-				c.stack.Reverse()
-			case "swap":
-				if c.stack.Len() < 2 {
-					fmt.Println("stack too small, can't swap")
-				} else {
-					c.stack.Backup()
-					c.stack.Swap()
-				}
-			case "undo":
-				c.stack.Restore()
-			case "history":
-				for _, entry := range c.history {
-					fmt.Println(entry)
-				}
-			case "showstack":
-				fallthrough
-			case "show":
-				c.ToggleShow()
-			case "noshowstack":
-				c.showstack = false
-			case "exit":
-				fallthrough
-			case "quit":
-				os.Exit(0)
-			case "manual":
-				man()
-			case "vars":
-				if len(c.Vars) > 0 {
-					fmt.Printf("%-20s     %s\n", "VARIABLE", "VALUE")
-					for k, v := range c.Vars {
-						fmt.Printf("%-20s  -> %.2f\n", k, v)
-					}
-				} else {
-					fmt.Println("no vars registered")
-				}
+				c.PrintHelp()
 
 			default:
 				fmt.Println("unknown command or operator!")
@@ -526,5 +494,53 @@ func (c *Calc) GetVar(name string) {
 		c.stack.Push(c.Vars[name])
 	} else {
 		fmt.Println("variable doesn't exist")
+	}
+}
+
+func sortcommands(hash Commands) []string {
+	keys := make([]string, 0, len(hash))
+
+	for key := range hash {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	return keys
+}
+
+func (c *Calc) PrintHelp() {
+	fmt.Println("Available configuration commands:")
+	for _, name := range sortcommands(c.SettingsCommands) {
+		fmt.Printf("%-20s %s\n", name, c.SettingsCommands[name].Help)
+	}
+	fmt.Println()
+
+	fmt.Println("Available show commands:")
+	for _, name := range sortcommands(c.ShowCommands) {
+		fmt.Printf("%-20s %s\n", name, c.ShowCommands[name].Help)
+	}
+	fmt.Println()
+
+	fmt.Println("Available stack manipulation commands:")
+	for _, name := range sortcommands(c.StackCommands) {
+		fmt.Printf("%-20s %s\n", name, c.StackCommands[name].Help)
+	}
+	fmt.Println()
+
+	fmt.Println("Other commands:")
+	for _, name := range sortcommands(c.Commands) {
+		fmt.Printf("%-20s %s\n", name, c.Commands[name].Help)
+	}
+	fmt.Println()
+
+	fmt.Println(Help)
+
+	// append lua functions, if any
+	if len(LuaFuncs) > 0 {
+		fmt.Println("Lua functions:")
+		for name, function := range LuaFuncs {
+			fmt.Printf("%-20s %s\n", name, function.help)
+		}
 	}
 }
