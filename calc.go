@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -46,7 +47,12 @@ type Calc struct {
 
 	Funcalls      Funcalls
 	BatchFuncalls Funcalls
-	Commands      Commands
+
+	// different kinds of commands, displays nicer in help output
+	StackCommands    Commands
+	SettingsCommands Commands
+	ShowCommands     Commands
+	Commands         Commands
 
 	Vars map[string]float64
 }
@@ -110,6 +116,18 @@ func (c *Calc) GetCompleteCustomFuncalls() func(string) []string {
 
 		for function := range c.BatchFuncalls {
 			completions = append(completions, function)
+		}
+
+		for command := range c.SettingsCommands {
+			completions = append(completions, command)
+		}
+
+		for command := range c.ShowCommands {
+			completions = append(completions, command)
+		}
+
+		for command := range c.StackCommands {
+			completions = append(completions, command)
 		}
 
 		for command := range c.Commands {
@@ -266,9 +284,24 @@ func (c *Calc) Eval(line string) {
 				continue
 			}
 
-			// management commands
+			// internal commands
 			if _, ok := c.Commands[item]; ok {
 				c.Commands[item].Func(c)
+				continue
+			}
+
+			if _, ok := c.ShowCommands[item]; ok {
+				c.ShowCommands[item].Func(c)
+				continue
+			}
+
+			if _, ok := c.StackCommands[item]; ok {
+				c.StackCommands[item].Func(c)
+				continue
+			}
+
+			if _, ok := c.SettingsCommands[item]; ok {
+				c.SettingsCommands[item].Func(c)
 				continue
 			}
 
@@ -276,17 +309,7 @@ func (c *Calc) Eval(line string) {
 			case "?":
 				fallthrough
 			case "help":
-				fmt.Println("Available commands:")
-				for name, command := range c.Commands {
-					fmt.Printf("%-20s %s\n", name, command.Help)
-				}
-				fmt.Println(Help)
-				if len(LuaFuncs) > 0 {
-					fmt.Println("Lua functions:")
-					for name, function := range LuaFuncs {
-						fmt.Printf("%-20s %s\n", name, function.help)
-					}
-				}
+				c.PrintHelp()
 
 			default:
 				fmt.Println("unknown command or operator!")
@@ -471,5 +494,53 @@ func (c *Calc) GetVar(name string) {
 		c.stack.Push(c.Vars[name])
 	} else {
 		fmt.Println("variable doesn't exist")
+	}
+}
+
+func sortcommands(hash Commands) []string {
+	keys := make([]string, 0, len(hash))
+
+	for key := range hash {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	return keys
+}
+
+func (c *Calc) PrintHelp() {
+	fmt.Println("Available configuration commands:")
+	for _, name := range sortcommands(c.SettingsCommands) {
+		fmt.Printf("%-20s %s\n", name, c.SettingsCommands[name].Help)
+	}
+	fmt.Println()
+
+	fmt.Println("Available show commands:")
+	for _, name := range sortcommands(c.ShowCommands) {
+		fmt.Printf("%-20s %s\n", name, c.ShowCommands[name].Help)
+	}
+	fmt.Println()
+
+	fmt.Println("Available stack manipulation commands:")
+	for _, name := range sortcommands(c.StackCommands) {
+		fmt.Printf("%-20s %s\n", name, c.StackCommands[name].Help)
+	}
+	fmt.Println()
+
+	fmt.Println("Other commands:")
+	for _, name := range sortcommands(c.Commands) {
+		fmt.Printf("%-20s %s\n", name, c.Commands[name].Help)
+	}
+	fmt.Println()
+
+	fmt.Println(Help)
+
+	// append lua functions, if any
+	if len(LuaFuncs) > 0 {
+		fmt.Println("Lua functions:")
+		for name, function := range LuaFuncs {
+			fmt.Printf("%-20s %s\n", name, function.help)
+		}
 	}
 }

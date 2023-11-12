@@ -40,7 +40,7 @@ func NewCommand(help string, function CommandFunction) *Command {
 
 // define all management (that is: non calculation) commands
 func (c *Calc) SetCommands() {
-	f := Commands{
+	c.SettingsCommands = Commands{
 		// Toggles
 		"debug": NewCommand(
 			"toggle debugging",
@@ -84,7 +84,9 @@ func (c *Calc) SetCommands() {
 				c.showstack = false
 			},
 		),
+	}
 
+	c.ShowCommands = Commands{
 		// Display commands
 		"dump": NewCommand(
 			"display the stack contents",
@@ -115,8 +117,9 @@ func (c *Calc) SetCommands() {
 				}
 			},
 		),
+	}
 
-		// stack manipulation commands
+	c.StackCommands = Commands{
 		"clear": NewCommand(
 			"clear the whole stack",
 			func(c *Calc) {
@@ -172,8 +175,10 @@ func (c *Calc) SetCommands() {
 				}
 			},
 		),
+	}
 
-		// general commands
+	// general commands
+	c.Commands = Commands{
 		"exit": NewCommand(
 			"exit program",
 			func(c *Calc) {
@@ -190,9 +195,7 @@ func (c *Calc) SetCommands() {
 	}
 
 	// aliases
-	f["quit"] = f["exit"]
-	f["undebug"] = f["nodebug"]
-	f["show"] = f["showstack"]
-
-	c.Commands = f
+	c.Commands["quit"] = c.Commands["exit"]
+	c.SettingsCommands["undebug"] = c.SettingsCommands["nodebug"]
+	c.SettingsCommands["show"] = c.SettingsCommands["showstack"]
 }
