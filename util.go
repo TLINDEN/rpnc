@@ -33,6 +33,15 @@ func contains(s []string, e string) bool {
 	return false
 }
 
+func exists(m map[string]interface{}, item string) bool {
+	// FIXME: try to use this for all cases
+	if _, ok := m[item]; ok {
+		return true
+	}
+
+	return false
+}
+
 func const2num(name string) float64 {
 	switch name {
 	case "Pi":
