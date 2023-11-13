@@ -241,6 +241,45 @@ func TestCalc(t *testing.T) {
 			cmd:  `4 4 + undo *`,
 			exp:  16,
 		},
+
+		// bit tests
+		{
+			name: "bit and",
+			cmd:  `1 3 and`,
+			exp:  1,
+		},
+		{
+			name: "bit or",
+			cmd:  `1 3 or`,
+			exp:  3,
+		},
+		{
+			name: "bit xor",
+			cmd:  `1 3 xor`,
+			exp:  2,
+		},
+
+		// converters
+		{
+			name: "inch-to-cm",
+			cmd:  `111 inch-to-cm`,
+			exp:  281.94,
+		},
+		{
+			name: "gallons-to-liters",
+			cmd:  `111 gallons-to-liters`,
+			exp:  420.135,
+		},
+		{
+			name: "meters-to-yards",
+			cmd:  `111 meters-to-yards`,
+			exp:  1.2139107611548556,
+		},
+		{
+			name: "miles-to-kilometers",
+			cmd:  `111 miles-to-kilometers`,
+			exp:  178.599,
+		},
 	}
 
 	for _, tt := range tests {

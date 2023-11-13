@@ -105,6 +105,9 @@ DESCRIPTION
     If the first parameter to rpn is a math operator or function, batch mode
     is enabled automatically, see last example.
 
+    You can enter integers, floating point numbers (positive or negative) or
+    hex numbers (prefixed with 0x).
+
   STACK MANIPULATION
     There are lots of stack manipulation commands provided. The most
     important one is undo which goes back to the stack before the last math

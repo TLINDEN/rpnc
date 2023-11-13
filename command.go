@@ -117,6 +117,15 @@ func (c *Calc) SetCommands() {
 				}
 			},
 		),
+
+		"hex": NewCommand(
+			"show last stack item in hex form (converted to int)",
+			func(c *Calc) {
+				if c.stack.Len() > 0 {
+					fmt.Printf("0x%x\n", int(c.stack.Last()[0]))
+				}
+			},
+		),
 	}
 
 	c.StackCommands = Commands{
