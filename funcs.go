@@ -387,6 +387,85 @@ func DefineFunctions() Funcalls {
 				return NewR(math.Hypot(arg[0], arg[1]), nil)
 			},
 			2),
+
+		// converters of all kinds
+		"cm-to-inch": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(arg[0]/2.54, nil)
+			},
+			1),
+
+		"inch-to-cm": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(arg[0]*2.54, nil)
+			},
+			1),
+
+		"gallons-to-liters": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(arg[0]*3.785, nil)
+			},
+			1),
+
+		"liters-to-gallons": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(arg[0]/3.785, nil)
+			},
+			1),
+
+		"yards-to-meters": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(arg[0]*91.44, nil)
+			},
+			1),
+
+		"meters-to-yards": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(arg[0]/91.44, nil)
+			},
+			1),
+
+		"miles-to-kilometers": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(arg[0]*1.609, nil)
+			},
+			1),
+
+		"kilometers-to-miles": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(arg[0]/1.609, nil)
+			},
+			1),
+
+		"or": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(float64(int(arg[0])|int(arg[1])), nil)
+			},
+			2),
+
+		"and": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(float64(int(arg[0])&int(arg[1])), nil)
+			},
+			2),
+
+		"xor": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(float64(int(arg[0])^int(arg[1])), nil)
+			},
+			2),
+
+		"<": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(float64(int(arg[0])<<int(arg[1])), nil)
+			},
+			2),
+
+		">": NewFuncall(
+			func(arg Numbers) R {
+				return NewR(float64(int(arg[0])>>int(arg[1])), nil)
+			},
+			2),
 	}
 
 	// aliases

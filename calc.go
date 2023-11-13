@@ -62,6 +62,8 @@ const Help string = `
 Operators:
 basic operators: + - x * / ^  (* is an alias of x)
 
+Bitwise operators: and or xor < (left shift) > (right shift)
+
 Percent functions:
 %                    percent
 %-                   substract percent
@@ -235,6 +237,15 @@ func (c *Calc) Eval(line string) {
 			c.stack.Backup()
 			c.stack.Push(num)
 		} else {
+			// try hex
+			var i int
+			_, err := fmt.Sscanf(item, "0x%x", &i)
+			if err == nil {
+				c.stack.Backup()
+				c.stack.Push(float64(i))
+				continue
+			}
+
 			if contains(c.Constants, item) {
 				// put the constant onto the stack
 				c.stack.Backup()
