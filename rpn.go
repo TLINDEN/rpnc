@@ -132,6 +132,14 @@ DESCRIPTION
         x                    multiply (alias: *)
         ^                    power
 
+    Bitwise operators:
+
+        and                  bitwise and
+        or                   bitwise or
+        xor                  bitwise xor
+        <                    left shift
+        >                    right shift
+
     Percent functions:
 
         %                    percent
@@ -153,20 +161,34 @@ DESCRIPTION
         log10 log1p log2 logb pow round roundtoeven sin sinh tan tanh trunc y0
         y1 copysign dim hypot
 
-    Commands:
+    Conversion functions:
+
+        cm-to-inch
+        inch-to-cm
+        gallons-to-liters
+        liters-to-gallons
+        yards-to-meters
+        meters-to-yards
+        miles-to-kilometers
+        kilometers-to-miles
+
+    Configuration Commands:
 
         [no]batch            toggle batch mode (nobatch turns it off)
         [no]debug            toggle debug output (nodebug turns it off)
         [no]showstack        show the last 5 items of the stack (noshowtack turns it off)
-        dump                 display the stack contents
-        clear                clear the whole stack
-        shift                remove the last element of the stack
-        reverse              reverse the stack elements
-        swap                 exchange the last two stack elements
-        dup                  duplicate last stack item
-        history              display calculation history
-        help|?               show this message
-        quit|exit|c-d|c-c    exit program
+
+    Show commands: dump display the stack contents hex show last stack item
+    in hex form (converted to int) history display calculation history vars
+    show list of variables
+
+    Stack manipulation commands: clear clear the whole stack shift remove
+    the last element of the stack reverse reverse the stack elements swap
+    exchange the last two stack elements dup duplicate last stack item undo
+    undo last operation
+
+    Other commands: help|? show this message manual show manual
+    quit|exit|c-d|c-c exit program
 
     Register variables:
 
