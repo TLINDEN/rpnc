@@ -198,6 +198,7 @@ Stack manipulation commands:
     swap                 exchange the last two stack elements
     dup                  duplicate last stack item
     undo                 undo last operation
+    edit                 edit the stack interactively using vi or $EDITOR
 
 Other commands:
     help|?               show this message

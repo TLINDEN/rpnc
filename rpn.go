@@ -185,7 +185,8 @@ DESCRIPTION
     Stack manipulation commands: clear clear the whole stack shift remove
     the last element of the stack reverse reverse the stack elements swap
     exchange the last two stack elements dup duplicate last stack item undo
-    undo last operation
+    undo last operation edit edit the stack interactively using vi or
+    $EDITOR
 
     Other commands: help|? show this message manual show manual
     quit|exit|c-d|c-c exit program
