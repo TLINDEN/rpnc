@@ -206,6 +206,9 @@ func (c *Calc) SetCommands() {
 				}
 				defer os.Remove(tmp.Name())
 
+				tmp.WriteString("# add or remove numbers as you wish.\n")
+				tmp.WriteString("# each number must be on its own line.\n")
+				tmp.WriteString("# numbers must be floating point formatted.\n")
 				for _, item := range c.stack.All() {
 					fmt.Fprintf(tmp, "%f\n", item)
 				}
