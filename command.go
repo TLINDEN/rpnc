@@ -203,14 +203,26 @@ func (c *Calc) SetCommands() {
 				tmp, err := os.CreateTemp("", "stack")
 				if err != nil {
 					fmt.Println(err)
+					return
 				}
 				defer os.Remove(tmp.Name())
 
-				tmp.WriteString("# add or remove numbers as you wish.\n")
-				tmp.WriteString("# each number must be on its own line.\n")
-				tmp.WriteString("# numbers must be floating point formatted.\n")
+				comment := `# add or remove numbers as you wish.
+# each number must be on its own line.
+# numbers must be floating point formatted.
+`
+				_, err = tmp.WriteString(comment)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+
 				for _, item := range c.stack.All() {
-					fmt.Fprintf(tmp, "%f\n", item)
+					_, err = fmt.Fprintf(tmp, "%f\n", item)
+					if err != nil {
+						fmt.Println(err)
+						return
+					}
 				}
 
 				tmp.Close()
