@@ -18,8 +18,12 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
+	"strconv"
+	"strings"
 )
 
 type CommandFunction func(*Calc)
@@ -181,6 +185,87 @@ func (c *Calc) SetCommands() {
 					c.stack.Push(item[0])
 				} else {
 					fmt.Println("stack empty")
+				}
+			},
+		),
+
+		"edit": NewCommand(
+			"edit the stack interactively",
+			func(c *Calc) {
+				if c.stack.Len() == 0 {
+					fmt.Println("empty stack")
+					return
+				}
+
+				c.stack.Backup()
+
+				// put the stack contents into a tmp file
+				tmp, err := os.CreateTemp("", "stack")
+				if err != nil {
+					fmt.Println(err)
+				}
+				defer os.Remove(tmp.Name())
+
+				for _, item := range c.stack.All() {
+					fmt.Fprintf(tmp, "%f\n", item)
+				}
+
+				tmp.Close()
+
+				// determine which editor to use
+				editor := "vi"
+				enveditor, present := os.LookupEnv("EDITOR")
+				if present {
+					if editor != "" {
+						if _, err := os.Stat(editor); err == nil {
+							editor = enveditor
+						}
+					}
+				}
+
+				// execute editor with our tmp file containing current stack
+				cmd := exec.Command(editor, tmp.Name())
+
+				cmd.Stdin = os.Stdin
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
+
+				err = cmd.Run()
+				if err != nil {
+					fmt.Println("could not run editor command: ", err)
+					return
+				}
+
+				// read the file back in
+				modified, err := os.Open(tmp.Name())
+				if err != nil {
+					fmt.Println("Error opening file:", err)
+					return
+				}
+				defer modified.Close()
+
+				// reset the stack
+				c.stack.Clear()
+
+				// and put the new contents (if legit) back onto the stack
+				scanner := bufio.NewScanner(modified)
+				for scanner.Scan() {
+					line := strings.TrimSpace(c.Comment.ReplaceAllString(scanner.Text(), ""))
+					if line == "" {
+						continue
+					}
+
+					num, err := strconv.ParseFloat(line, 64)
+					if err != nil {
+						fmt.Printf("%s is not a floating point number!\n", line)
+						continue
+					}
+
+					c.stack.Push(num)
+				}
+
+				if err := scanner.Err(); err != nil {
+					fmt.Println("Error reading from file:", err)
 				}
 			},
 		),
