@@ -198,6 +198,17 @@ DESCRIPTION
 
     Refer to https://pkg.go.dev/math for details about those functions.
 
+    There are also a number of shortcuts for some commands available:
+
+        d    debug
+        b    batch
+        s    showstack
+        h    history
+        p    dump (aka print)
+        v    vars
+        c    clear
+        u    undo
+
 INTERACTIVE REPL
     While you can use rpn in the command-line, the best experience you'll
     have is the interactive repl (read eval print loop). Just execute "rpn"

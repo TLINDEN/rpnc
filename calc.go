@@ -121,19 +121,27 @@ func (c *Calc) GetCompleteCustomFuncalls() func(string) []string {
 		}
 
 		for command := range c.SettingsCommands {
-			completions = append(completions, command)
+			if len(command) > 1 {
+				completions = append(completions, command)
+			}
 		}
 
 		for command := range c.ShowCommands {
-			completions = append(completions, command)
+			if len(command) > 1 {
+				completions = append(completions, command)
+			}
 		}
 
 		for command := range c.StackCommands {
-			completions = append(completions, command)
+			if len(command) > 1 {
+				completions = append(completions, command)
+			}
 		}
 
 		for command := range c.Commands {
-			completions = append(completions, command)
+			if len(command) > 1 {
+				completions = append(completions, command)
+			}
 		}
 
 		return completions
