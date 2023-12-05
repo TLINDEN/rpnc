@@ -305,6 +305,15 @@ func (c *Calc) SetCommands() {
 
 	// aliases
 	c.Commands["quit"] = c.Commands["exit"]
-	c.SettingsCommands["undebug"] = c.SettingsCommands["nodebug"]
-	c.SettingsCommands["show"] = c.SettingsCommands["showstack"]
+
+	c.SettingsCommands["d"] = c.SettingsCommands["debug"]
+	c.SettingsCommands["b"] = c.SettingsCommands["batch"]
+	c.SettingsCommands["s"] = c.SettingsCommands["showstack"]
+
+	c.ShowCommands["h"] = c.ShowCommands["history"]
+	c.ShowCommands["p"] = c.ShowCommands["dump"]
+	c.ShowCommands["v"] = c.ShowCommands["vars"]
+
+	c.StackCommands["c"] = c.StackCommands["clear"]
+	c.StackCommands["u"] = c.StackCommands["undo"]
 }
