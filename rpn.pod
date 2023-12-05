@@ -186,12 +186,14 @@ Configuration Commands:
     [no]showstack        show the last 5 items of the stack (noshowtack turns it off)
 
 Show commands:
+
     dump                 display the stack contents
     hex                  show last stack item in hex form (converted to int)
     history              display calculation history
     vars                 show list of variables
 
 Stack manipulation commands:
+
     clear                clear the whole stack
     shift                remove the last element of the stack
     reverse              reverse the stack elements
@@ -201,6 +203,7 @@ Stack manipulation commands:
     edit                 edit the stack interactively using vi or $EDITOR
 
 Other commands:
+
     help|?               show this message
     manual               show manual
     quit|exit|c-d|c-c    exit program

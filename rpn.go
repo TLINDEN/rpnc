@@ -178,18 +178,28 @@ DESCRIPTION
         [no]debug            toggle debug output (nodebug turns it off)
         [no]showstack        show the last 5 items of the stack (noshowtack turns it off)
 
-    Show commands: dump display the stack contents hex show last stack item
-    in hex form (converted to int) history display calculation history vars
-    show list of variables
+    Show commands:
 
-    Stack manipulation commands: clear clear the whole stack shift remove
-    the last element of the stack reverse reverse the stack elements swap
-    exchange the last two stack elements dup duplicate last stack item undo
-    undo last operation edit edit the stack interactively using vi or
-    $EDITOR
+        dump                 display the stack contents
+        hex                  show last stack item in hex form (converted to int)
+        history              display calculation history
+        vars                 show list of variables
 
-    Other commands: help|? show this message manual show manual
-    quit|exit|c-d|c-c exit program
+    Stack manipulation commands:
+
+        clear                clear the whole stack
+        shift                remove the last element of the stack
+        reverse              reverse the stack elements
+        swap                 exchange the last two stack elements
+        dup                  duplicate last stack item
+        undo                 undo last operation
+        edit                 edit the stack interactively using vi or $EDITOR
+
+    Other commands:
+
+        help|?               show this message
+        manual               show manual
+        quit|exit|c-d|c-c    exit program
 
     Register variables:
 
