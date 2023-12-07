@@ -261,7 +261,7 @@ func (c *Calc) Eval(line string) {
 				continue
 			}
 
-			if _, ok := c.Funcalls[item]; ok {
+			if exists(c.Funcalls, item) {
 				if err := c.DoFuncall(item); err != nil {
 					fmt.Println(err)
 				} else {
@@ -270,20 +270,18 @@ func (c *Calc) Eval(line string) {
 				continue
 			}
 
-			if c.batch {
-				if _, ok := c.BatchFuncalls[item]; ok {
-					if err := c.DoFuncall(item); err != nil {
-						fmt.Println(err)
-					} else {
-						c.Result()
-					}
-					continue
-				}
-			} else {
-				if _, ok := c.BatchFuncalls[item]; ok {
+			if exists(c.BatchFuncalls, item) {
+				if !c.batch {
 					fmt.Println("only supported in batch mode")
 					continue
 				}
+
+				if err := c.DoFuncall(item); err != nil {
+					fmt.Println(err)
+				} else {
+					c.Result()
+				}
+				continue
 			}
 
 			if contains(c.LuaFunctions, item) {
@@ -304,22 +302,22 @@ func (c *Calc) Eval(line string) {
 			}
 
 			// internal commands
-			if _, ok := c.Commands[item]; ok {
+			if exists(c.Commands, item) {
 				c.Commands[item].Func(c)
 				continue
 			}
 
-			if _, ok := c.ShowCommands[item]; ok {
+			if exists(c.ShowCommands, item) {
 				c.ShowCommands[item].Func(c)
 				continue
 			}
 
-			if _, ok := c.StackCommands[item]; ok {
+			if exists(c.StackCommands, item) {
 				c.StackCommands[item].Func(c)
 				continue
 			}
 
-			if _, ok := c.SettingsCommands[item]; ok {
+			if exists(c.SettingsCommands, item) {
 				c.SettingsCommands[item].Func(c)
 				continue
 			}
@@ -507,7 +505,7 @@ func (c *Calc) PutVar(name string) {
 }
 
 func (c *Calc) GetVar(name string) {
-	if _, ok := c.Vars[name]; ok {
+	if exists(c.Vars, name) {
 		c.Debug(fmt.Sprintf("retrieve %.2f from %s", c.Vars[name], name))
 		c.stack.Backup()
 		c.stack.Push(c.Vars[name])

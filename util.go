@@ -23,12 +23,20 @@ import (
 	"strings"
 )
 
-// find an item in a list
-func contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
+// find an item in a list, generic variant
+func contains[E comparable](s []E, v E) bool {
+	for _, vs := range s {
+		if v == vs {
 			return true
 		}
+	}
+	return false
+}
+
+// look if a key in a map exists, generic variant
+func exists[K comparable, V any](m map[K]V, v K) bool {
+	if _, ok := m[v]; ok {
+		return true
 	}
 	return false
 }
