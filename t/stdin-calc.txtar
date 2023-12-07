@@ -1,0 +1,4 @@
+exec echo 10 10 +
+stdin stdout
+exec testrpn
+stdout '20\n'

@@ -1,0 +1,13 @@
+stdin input.txt
+exec testrpn
+stdout '28\n'
+
+-- input.txt --
+10
+10
++
+>SUM
+clear
+8
+<SUM
++

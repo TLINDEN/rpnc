@@ -1,0 +1,6 @@
+stdin input.txt
+exec testrpn
+stdout 'Available configuration commands'
+
+-- input.txt --
+?
