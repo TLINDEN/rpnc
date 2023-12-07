@@ -1,0 +1,4 @@
+exec echo 1 2 3 4 5 median
+stdin stdout
+exec testrpn -b
+[unix] stdout '3\n'

@@ -1,0 +1,2 @@
+exec testrpn 1 2 dumb
+stdout 'unknown command or operator'

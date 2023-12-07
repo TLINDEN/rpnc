@@ -1,0 +1,2 @@
+exec testrpn 4 +
+stdout 'stack doesn''t provide enough arguments'

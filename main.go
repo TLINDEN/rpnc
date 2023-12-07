@@ -42,6 +42,7 @@ Options:
   -s, --stack         show last 5 items of the stack (off by default)
   -i  --intermediate  print intermediate results
   -m, --manual        show manual
+  -c, --config <file> load <file> containing LUA code
   -v, --version       show version
   -h, --help          show help
 
@@ -51,6 +52,10 @@ this only when working with stdin. E.g.: echo "2 3 4 5" | rpn +
 Copyright (c) 2023 T.v.Dein`
 
 func main() {
+	os.Exit(Main())
+}
+
+func Main() int {
 	calc := NewCalc()
 
 	showversion := false
@@ -74,12 +79,12 @@ func main() {
 
 	if showversion {
 		fmt.Printf("This is rpn version %s\n", VERSION)
-		return
+		return 0
 	}
 
 	if showhelp {
 		fmt.Println(Usage)
-		return
+		return 0
 	}
 
 	if enabledebug {
@@ -88,7 +93,7 @@ func main() {
 
 	if showmanual {
 		man()
-		os.Exit(0)
+		return 0
 	}
 
 	// the lua state object is global, instanciate it early
@@ -101,6 +106,13 @@ func main() {
 		luarunner := NewInterpreter(configfile, enabledebug)
 		luarunner.InitLua()
 		calc.SetInt(luarunner)
+		if calc.debug {
+			fmt.Println("loaded config")
+		}
+	} else {
+		if calc.debug {
+			fmt.Println(err)
+		}
 	}
 
 	if len(flag.Args()) > 1 {
@@ -108,7 +120,7 @@ func main() {
 		// called like rpn 2 2 +
 		calc.stdin = true
 		calc.Eval(strings.Join(flag.Args(), " "))
-		return
+		return 0
 	}
 
 	// interactive mode, need readline
@@ -152,6 +164,8 @@ func main() {
 		calc.batch = true
 		calc.Eval(flag.Args()[0])
 	}
+
+	return 0
 }
 
 func inputIsStdin() bool {

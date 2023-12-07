@@ -1,0 +1,2 @@
+exec testrpn 1 2 dump
+stdout 'Stack revision 2 .0x'

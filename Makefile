@@ -57,8 +57,8 @@ test:
 	go test -v ./...
 
 singletest:
-	@echo "Call like this: ''make singletest TEST=TestPrepareColumns"
-	go test -run $(TEST)
+	@echo "Call like this: make singletest TEST=TestPrepareColumns ARGS=-v"
+	go test -run $(TEST) $(ARGS)
 
 cover-report:
 	go test ./... -cover -coverprofile=coverage.out

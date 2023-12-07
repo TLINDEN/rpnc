@@ -1,0 +1,2 @@
+exec testrpn -d 44 55 *
+stdout 'push to stack: 2420.00\n'
