@@ -520,7 +520,9 @@ func sortcommands(hash Commands) []string {
 	keys := make([]string, 0, len(hash))
 
 	for key := range hash {
-		keys = append(keys, key)
+		if len(key) > 1 {
+			keys = append(keys, key)
+		}
 	}
 
 	sort.Strings(keys)
