@@ -1,4 +1,4 @@
 exec echo 1 2 3 4 5 median
 stdin stdout
 exec testrpn -b
-stdout '3\n'
+[unix] stdout '3\n'

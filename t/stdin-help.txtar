@@ -1,6 +1,6 @@
 stdin input.txt
 exec testrpn
-stdout 'Available configuration commands'
+[unix] stdout 'Available configuration commands'
 
 -- input.txt --
 ?

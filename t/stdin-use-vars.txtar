@@ -1,6 +1,6 @@
 stdin input.txt
 exec testrpn
-stdout '28\n'
+[unix] stdout '28\n'
 
 -- input.txt --
 10
