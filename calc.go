@@ -222,12 +222,12 @@ func (c *Calc) Prompt() string {
 }
 
 // the actual work horse, evaluate a line of calc command[s]
-func (c *Calc) Eval(line string) {
+func (c *Calc) Eval(line string) error {
 	// remove surrounding whitespace and comments, if any
 	line = strings.TrimSpace(c.Comment.ReplaceAllString(line, ""))
 
 	if line == "" {
-		return
+		return nil
 	}
 
 	items := c.Space.Split(line, -1)
@@ -239,98 +239,8 @@ func (c *Calc) Eval(line string) {
 			c.notdone = false
 		}
 
-		num, err := strconv.ParseFloat(item, 64)
-
-		if err == nil {
-			c.stack.Backup()
-			c.stack.Push(num)
-		} else {
-			// try hex
-			var i int
-			_, err := fmt.Sscanf(item, "0x%x", &i)
-			if err == nil {
-				c.stack.Backup()
-				c.stack.Push(float64(i))
-				continue
-			}
-
-			if contains(c.Constants, item) {
-				// put the constant onto the stack
-				c.stack.Backup()
-				c.stack.Push(const2num(item))
-				continue
-			}
-
-			if exists(c.Funcalls, item) {
-				if err := c.DoFuncall(item); err != nil {
-					fmt.Println(err)
-				} else {
-					c.Result()
-				}
-				continue
-			}
-
-			if exists(c.BatchFuncalls, item) {
-				if !c.batch {
-					fmt.Println("only supported in batch mode")
-					continue
-				}
-
-				if err := c.DoFuncall(item); err != nil {
-					fmt.Println(err)
-				} else {
-					c.Result()
-				}
-				continue
-			}
-
-			if contains(c.LuaFunctions, item) {
-				// user provided custom lua functions
-				c.EvalLuaFunction(item)
-				continue
-			}
-
-			regmatches := c.Register.FindStringSubmatch(item)
-			if len(regmatches) == 3 {
-				switch regmatches[1] {
-				case ">":
-					c.PutVar(regmatches[2])
-				case "<":
-					c.GetVar(regmatches[2])
-				}
-				continue
-			}
-
-			// internal commands
-			if exists(c.Commands, item) {
-				c.Commands[item].Func(c)
-				continue
-			}
-
-			if exists(c.ShowCommands, item) {
-				c.ShowCommands[item].Func(c)
-				continue
-			}
-
-			if exists(c.StackCommands, item) {
-				c.StackCommands[item].Func(c)
-				continue
-			}
-
-			if exists(c.SettingsCommands, item) {
-				c.SettingsCommands[item].Func(c)
-				continue
-			}
-
-			switch item {
-			case "?":
-				fallthrough
-			case "help":
-				c.PrintHelp()
-
-			default:
-				fmt.Println("unknown command or operator!")
-			}
+		if err := c.EvalItem(item); err != nil {
+			return err
 		}
 	}
 
@@ -343,6 +253,106 @@ func (c *Calc) Eval(line string) {
 		last := c.stack.Last(5)
 		fmt.Printf("stack: %s%s\n", dots, list2str(last))
 	}
+
+	return nil
+}
+
+func (c *Calc) EvalItem(item string) error {
+	num, err := strconv.ParseFloat(item, 64)
+
+	if err == nil {
+		c.stack.Backup()
+		c.stack.Push(num)
+	} else {
+		// try hex
+		var i int
+		_, err := fmt.Sscanf(item, "0x%x", &i)
+		if err == nil {
+			c.stack.Backup()
+			c.stack.Push(float64(i))
+			return nil
+		}
+
+		if contains(c.Constants, item) {
+			// put the constant onto the stack
+			c.stack.Backup()
+			c.stack.Push(const2num(item))
+			return nil
+		}
+
+		if exists(c.Funcalls, item) {
+			if err := c.DoFuncall(item); err != nil {
+				return Error(err.Error())
+			} else {
+				c.Result()
+			}
+			return nil
+		}
+
+		if exists(c.BatchFuncalls, item) {
+			if !c.batch {
+				return Error("only supported in batch mode")
+			}
+
+			if err := c.DoFuncall(item); err != nil {
+				return Error(err.Error())
+			} else {
+				c.Result()
+			}
+			return nil
+		}
+
+		if contains(c.LuaFunctions, item) {
+			// user provided custom lua functions
+			c.EvalLuaFunction(item)
+			return nil
+		}
+
+		regmatches := c.Register.FindStringSubmatch(item)
+		if len(regmatches) == 3 {
+			switch regmatches[1] {
+			case ">":
+				c.PutVar(regmatches[2])
+			case "<":
+				c.GetVar(regmatches[2])
+			}
+			return nil
+		}
+
+		// internal commands
+		// FIXME: propagate errors
+		if exists(c.Commands, item) {
+			c.Commands[item].Func(c)
+			return nil
+		}
+
+		if exists(c.ShowCommands, item) {
+			c.ShowCommands[item].Func(c)
+			return nil
+		}
+
+		if exists(c.StackCommands, item) {
+			c.StackCommands[item].Func(c)
+			return nil
+		}
+
+		if exists(c.SettingsCommands, item) {
+			c.SettingsCommands[item].Func(c)
+			return nil
+		}
+
+		switch item {
+		case "?":
+			fallthrough
+		case "help":
+			c.PrintHelp()
+
+		default:
+			return Error("unknown command or operator")
+		}
+	}
+
+	return nil
 }
 
 // Execute a math function, check if it is defined just in case
@@ -355,7 +365,7 @@ func (c *Calc) DoFuncall(funcname string) error {
 	}
 
 	if function == nil {
-		panic("function not defined but in completion list")
+		return Error("function not defined but in completion list")
 	}
 
 	var args Numbers
