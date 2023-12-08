@@ -457,12 +457,20 @@ func DefineFunctions() Funcalls {
 
 		"<": NewFuncall(
 			func(arg Numbers) R {
+				// Shift by negative number provibited, so check it.
+				// Note that we check agains uint64 overflow as well here
+				if arg[1] < 0 || uint64(arg[1]) > math.MaxInt64 {
+					return NewR(0, errors.New("negative shift amount"))
+				}
 				return NewR(float64(int(arg[0])<<int(arg[1])), nil)
 			},
 			2),
 
 		">": NewFuncall(
 			func(arg Numbers) R {
+				if arg[1] < 0 || uint64(arg[1]) > math.MaxInt64 {
+					return NewR(0, errors.New("negative shift amount"))
+				}
 				return NewR(float64(int(arg[0])>>int(arg[1])), nil)
 			},
 			2),
