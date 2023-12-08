@@ -19,6 +19,8 @@ package main
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"testing"
 
 	lua "github.com/yuin/gopher-lua"
@@ -75,7 +77,9 @@ func TestCommentsAndWhitespace(t *testing.T) {
 
 		t.Run(testname, func(t *testing.T) {
 			for _, line := range tt.cmd {
-				calc.Eval(line)
+				if err := calc.Eval(line); err != nil {
+					t.Errorf(err.Error())
+				}
 			}
 			got := calc.stack.Last()
 
@@ -288,7 +292,9 @@ func TestCalc(t *testing.T) {
 
 		t.Run(testname, func(t *testing.T) {
 			calc.batch = tt.batch
-			calc.Eval(tt.cmd)
+			if err := calc.Eval(tt.cmd); err != nil {
+				t.Errorf(err.Error())
+			}
 			got := calc.Result()
 			calc.stack.Clear()
 			if got != tt.exp {
@@ -349,4 +355,61 @@ func TestCalcLua(t *testing.T) {
 			}
 		})
 	}
+}
+
+func FuzzEval(f *testing.F) {
+	legal := []string{
+		"dump",
+		"showstack",
+		"help",
+		"Pi 31 *",
+		"SqrtE Pi /",
+		"55.5 yards-to-meters",
+		"2 4 +",
+		"7 8 batch sum",
+		"7 8 %-",
+		"7 8 clear",
+		"7 8 /",
+		"b",
+		"#444",
+		"<X",
+	}
+
+	for _, item := range legal {
+		f.Add(item)
+	}
+
+	calc := NewCalc()
+	var i int
+
+	f.Fuzz(func(t *testing.T, line string) {
+		t.Logf("Stack:\n%v\n", calc.stack.All())
+		if err := calc.EvalItem(line); err == nil {
+			t.Logf("given: <%s>", line)
+			// not corpus and empty?
+			if !contains(legal, line) && len(line) > 0 {
+				item := strings.TrimSpace(calc.Comment.ReplaceAllString(line, ""))
+				_, hexerr := fmt.Sscanf(item, "0x%x", &i)
+				// no comment?
+				if len(item) > 0 {
+					// no known command or function?
+					if _, err := strconv.ParseFloat(item, 64); err != nil {
+						if !contains(calc.Constants, item) &&
+							!exists(calc.Funcalls, item) &&
+							!exists(calc.BatchFuncalls, item) &&
+							!contains(calc.LuaFunctions, item) &&
+							!exists(calc.Commands, item) &&
+							!exists(calc.ShowCommands, item) &&
+							!exists(calc.SettingsCommands, item) &&
+							!exists(calc.StackCommands, item) &&
+							!calc.Register.MatchString(item) &&
+							item != "?" && item != "help" &&
+							hexerr != nil {
+							t.Errorf("Fuzzy input accepted: <%s>", line)
+						}
+					}
+				}
+			}
+		}
+	})
 }
