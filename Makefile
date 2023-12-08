@@ -51,10 +51,13 @@ install: buildlocal
 	install -o $(UID) -g $(GID) -m 444 $(tool).1 $(PREFIX)/man/man1/
 
 clean:
-	rm -rf $(tool) coverage.out
+	rm -rf $(tool) coverage.out testdata
 
-test:
-	go test -v ./...
+test: clean
+	go test ./... $(ARGS)
+
+testfuzzy: clean
+	go test -fuzz ./... $(ARGS)
 
 singletest:
 	@echo "Call like this: make singletest TEST=TestPrepareColumns ARGS=-v"

@@ -30,7 +30,7 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-const VERSION string = "2.0.12"
+const VERSION string = "2.0.13"
 
 const Usage string = `This is rpn, a reverse polish notation calculator cli.
 
@@ -119,7 +119,11 @@ func Main() int {
 		// commandline calc operation, no readline etc needed
 		// called like rpn 2 2 +
 		calc.stdin = true
-		calc.Eval(strings.Join(flag.Args(), " "))
+		if err := calc.Eval(strings.Join(flag.Args(), " ")); err != nil {
+			fmt.Println(err)
+			return 1
+		}
+
 		return 0
 	}
 
@@ -153,7 +157,10 @@ func Main() int {
 			break
 		}
 
-		calc.Eval(line)
+		err = calc.Eval(line)
+		if err != nil {
+			fmt.Println(err)
+		}
 		rl.SetPrompt(calc.Prompt())
 	}
 
@@ -162,7 +169,10 @@ func Main() int {
 		// echo 1 2 3 4 | rpn +
 		// batch mode enabled automatically
 		calc.batch = true
-		calc.Eval(flag.Args()[0])
+		if err = calc.Eval(flag.Args()[0]); err != nil {
+			fmt.Println(err)
+			return 1
+		}
 	}
 
 	return 0

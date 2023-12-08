@@ -1,2 +1,2 @@
-exec testrpn 100 50 50 - /
-stdout 'division by null\n'
+! exec testrpn 100 50 50 - /
+stdout 'division by null'
