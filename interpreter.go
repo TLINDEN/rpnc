@@ -29,8 +29,8 @@ type Interpreter struct {
 	script string
 }
 
-// LUA interpreter, instanciated in main()
-var L *lua.LState
+// LuaInterpreter is the lua interpreter, instantiated in main()
+var LuaInterpreter *lua.LState
 
 // holds a user provided lua function
 type LuaFunction struct {
@@ -39,8 +39,8 @@ type LuaFunction struct {
 	numargs int
 }
 
-// must be global since init() is  being called from lua which doesn't
-// have access to the interpreter instance
+// LuaFuncs must be global since init() is being called from lua which
+// doesn't have access to the interpreter instance
 var LuaFuncs map[string]LuaFunction
 
 func NewInterpreter(script string, debug bool) *Interpreter {
@@ -61,8 +61,8 @@ func (i *Interpreter) InitLua() {
 		{lua.DebugLibName, lua.OpenDebug},
 		{lua.MathLibName, lua.OpenMath},
 	} {
-		if err := L.CallByParam(lua.P{
-			Fn:      L.NewFunction(pair.f),
+		if err := LuaInterpreter.CallByParam(lua.P{
+			Fn:      LuaInterpreter.NewFunction(pair.f),
 			NRet:    0,
 			Protect: true,
 		}, lua.LString(pair.n)); err != nil {
@@ -71,19 +71,19 @@ func (i *Interpreter) InitLua() {
 	}
 
 	// load the lua config (which we expect to contain init() and math functions)
-	if err := L.DoFile(i.script); err != nil {
+	if err := LuaInterpreter.DoFile(i.script); err != nil {
 		panic(err)
 	}
 
-	// instanciate
+	// instantiate
 	LuaFuncs = map[string]LuaFunction{}
 
 	// that way the user can call register(...) from lua inside init()
-	L.SetGlobal("register", L.NewFunction(register))
+	LuaInterpreter.SetGlobal("register", LuaInterpreter.NewFunction(register))
 
 	// actually call init()
-	if err := L.CallByParam(lua.P{
-		Fn:      L.GetGlobal("init"),
+	if err := LuaInterpreter.CallByParam(lua.P{
+		Fn:      LuaInterpreter.GetGlobal("init"),
 		NRet:    0,
 		Protect: true,
 	}); err != nil {
@@ -108,9 +108,9 @@ func (i *Interpreter) FuncNumArgs(name string) int {
 // arguments. 1 uses the last item of the stack, 2 the last two and -1
 // all items (which translates to batch mode)
 //
-// The  items  array  will  be   provded  by  calc.Eval(),  these  are
+// The  items  array  will  be  provided  by  calc.Eval(),  these  are
 // non-popped stack  items. So  the items will  only removed  from the
-// stack when the lua function execution is successfull.
+// stack when the lua function execution is successful.
 func (i *Interpreter) CallLuaFunc(funcname string, items []float64) (float64, error) {
 	i.Debug(fmt.Sprintf("calling lua func %s() with %d args",
 		funcname, LuaFuncs[funcname].numargs))
@@ -120,44 +120,44 @@ func (i *Interpreter) CallLuaFunc(funcname string, items []float64) (float64, er
 		fallthrough
 	case 1:
 		// 1 arg variant
-		if err := L.CallByParam(lua.P{
-			Fn:      L.GetGlobal(funcname),
+		if err := LuaInterpreter.CallByParam(lua.P{
+			Fn:      LuaInterpreter.GetGlobal(funcname),
 			NRet:    1,
 			Protect: true,
 		}, lua.LNumber(items[0])); err != nil {
-			fmt.Println(err)
-			return 0, err
+			return 0, fmt.Errorf("failed to exec lua func %s: %w", funcname, err)
 		}
 	case 2:
 		// 2 arg variant
-		if err := L.CallByParam(lua.P{
-			Fn:      L.GetGlobal(funcname),
+		if err := LuaInterpreter.CallByParam(lua.P{
+			Fn:      LuaInterpreter.GetGlobal(funcname),
 			NRet:    1,
 			Protect: true,
 		}, lua.LNumber(items[0]), lua.LNumber(items[1])); err != nil {
-			return 0, err
+			return 0, fmt.Errorf("failed to exec lua func %s: %w", funcname, err)
 		}
 	case -1:
 		// batch variant, use lua table as array
-		tb := L.NewTable()
+		table := LuaInterpreter.NewTable()
 
 		// put the whole stack into it
 		for _, item := range items {
-			tb.Append(lua.LNumber(item))
+			table.Append(lua.LNumber(item))
 		}
 
-		if err := L.CallByParam(lua.P{
-			Fn:      L.GetGlobal(funcname),
+		if err := LuaInterpreter.CallByParam(lua.P{
+			Fn:      LuaInterpreter.GetGlobal(funcname),
 			NRet:    1,
 			Protect: true,
-		}, tb); err != nil {
-			return 0, err
+		}, table); err != nil {
+			return 0, fmt.Errorf("failed to exec lua func %s: %w", funcname, err)
 		}
 	}
 
 	// get result and cast to float64
-	if res, ok := L.Get(-1).(lua.LNumber); ok {
-		L.Pop(1)
+	if res, ok := LuaInterpreter.Get(-1).(lua.LNumber); ok {
+		LuaInterpreter.Pop(1)
+
 		return float64(res), nil
 	}
 
@@ -167,10 +167,10 @@ func (i *Interpreter) CallLuaFunc(funcname string, items []float64) (float64, er
 // called from lua to register a math  function numargs may be 1, 2 or
 // -1, it denotes the number of  items from the stack requested by the
 // lua function. -1 means batch mode, that is all items
-func register(L *lua.LState) int {
-	function := L.ToString(1)
-	numargs := L.ToInt(2)
-	help := L.ToString(3)
+func register(lstate *lua.LState) int {
+	function := lstate.ToString(1)
+	numargs := lstate.ToInt(2)
+	help := lstate.ToString(3)
 
 	LuaFuncs[function] = LuaFunction{
 		name:    function,

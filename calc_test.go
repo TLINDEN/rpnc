@@ -71,12 +71,12 @@ func TestCommentsAndWhitespace(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
+	for _, test := range tests {
 		testname := fmt.Sprintf("%s .(expect %.2f)",
-			tt.name, tt.exp)
+			test.name, test.exp)
 
 		t.Run(testname, func(t *testing.T) {
-			for _, line := range tt.cmd {
+			for _, line := range test.cmd {
 				if err := calc.Eval(line); err != nil {
 					t.Errorf(err.Error())
 				}
@@ -84,9 +84,9 @@ func TestCommentsAndWhitespace(t *testing.T) {
 			got := calc.stack.Last()
 
 			if len(got) > 0 {
-				if got[0] != tt.exp {
+				if got[0] != test.exp {
 					t.Errorf("parsing failed:\n+++  got: %f\n--- want: %f",
-						got, tt.exp)
+						got, test.exp)
 				}
 			}
 
@@ -94,7 +94,6 @@ func TestCommentsAndWhitespace(t *testing.T) {
 				t.Errorf("invalid stack size:\n+++  got: %d\n--- want: 1",
 					calc.stack.Len())
 			}
-
 		})
 
 		calc.stack.Clear()
@@ -286,20 +285,20 @@ func TestCalc(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
+	for _, test := range tests {
 		testname := fmt.Sprintf("cmd-%s-expect-%.2f",
-			tt.name, tt.exp)
+			test.name, test.exp)
 
 		t.Run(testname, func(t *testing.T) {
-			calc.batch = tt.batch
-			if err := calc.Eval(tt.cmd); err != nil {
+			calc.batch = test.batch
+			if err := calc.Eval(test.cmd); err != nil {
 				t.Errorf(err.Error())
 			}
 			got := calc.Result()
 			calc.stack.Clear()
-			if got != tt.exp {
+			if got != test.exp {
 				t.Errorf("calc failed:\n+++  got: %f\n--- want: %f",
-					got, tt.exp)
+					got, test.exp)
 			}
 		})
 	}
@@ -324,23 +323,24 @@ func TestCalcLua(t *testing.T) {
 	}
 
 	calc := NewCalc()
-	L = lua.NewState(lua.Options{SkipOpenLibs: true})
-	defer L.Close()
+
+	LuaInterpreter = lua.NewState(lua.Options{SkipOpenLibs: true})
+	defer LuaInterpreter.Close()
 
 	luarunner := NewInterpreter("example.lua", false)
 	luarunner.InitLua()
 	calc.SetInt(luarunner)
 
-	for _, tt := range tests {
-		testname := fmt.Sprintf("lua-%s", tt.function)
+	for _, test := range tests {
+		testname := fmt.Sprintf("lua-%s", test.function)
 
 		t.Run(testname, func(t *testing.T) {
 			calc.stack.Clear()
-			for _, item := range tt.stack {
+			for _, item := range test.stack {
 				calc.stack.Push(item)
 			}
 
-			calc.EvalLuaFunction(tt.function)
+			calc.EvalLuaFunction(test.function)
 
 			got := calc.stack.Last()
 
@@ -349,9 +349,9 @@ func TestCalcLua(t *testing.T) {
 					calc.stack.Len())
 			}
 
-			if got[0] != tt.exp {
+			if got[0] != test.exp {
 				t.Errorf("lua function %s failed:\n+++  got: %f\n--- want: %f",
-					tt.function, got, tt.exp)
+					test.function, got, test.exp)
 			}
 		})
 	}
@@ -380,7 +380,8 @@ func FuzzEval(f *testing.F) {
 	}
 
 	calc := NewCalc()
-	var i int
+
+	var hexnum int
 
 	f.Fuzz(func(t *testing.T, line string) {
 		t.Logf("Stack:\n%v\n", calc.stack.All())
@@ -389,7 +390,7 @@ func FuzzEval(f *testing.F) {
 			// not corpus and empty?
 			if !contains(legal, line) && len(line) > 0 {
 				item := strings.TrimSpace(calc.Comment.ReplaceAllString(line, ""))
-				_, hexerr := fmt.Sscanf(item, "0x%x", &i)
+				_, hexerr := fmt.Sscanf(item, "0x%x", &hexnum)
 				// no comment?
 				if len(item) > 0 {
 					// no known command or function?

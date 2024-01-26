@@ -35,16 +35,16 @@ func TestPush(t *testing.T) {
 
 func TestPop(t *testing.T) {
 	t.Run("pop", func(t *testing.T) {
-		s := NewStack()
-		s.Push(5)
-		got := s.Pop()
+		stack := NewStack()
+		stack.Push(5)
+		got := stack.Pop()
 
 		if got != 5.0 {
 			t.Errorf("pop failed:\n+++  got: %f\n--- want: %f",
 				got, 5.0)
 		}
 
-		if s.Len() != 0 {
+		if stack.Len() != 0 {
 			t.Errorf("stack not empty after pop()")
 		}
 	})
@@ -52,25 +52,25 @@ func TestPop(t *testing.T) {
 
 func TestPops(t *testing.T) {
 	t.Run("pops", func(t *testing.T) {
-		s := NewStack()
-		s.Push(5)
-		s.Push(5)
-		s.Push(5)
-		s.Pop()
+		stack := NewStack()
+		stack.Push(5)
+		stack.Push(5)
+		stack.Push(5)
+		stack.Pop()
 
-		if s.Len() != 2 {
+		if stack.Len() != 2 {
 			t.Errorf("stack len not correct after pop:\n+++  got: %d\n--- want: %d",
-				s.Len(), 2)
+				stack.Len(), 2)
 		}
 	})
 }
 
 func TestShift(t *testing.T) {
 	t.Run("shift", func(t *testing.T) {
-		s := NewStack()
-		s.Shift()
+		stack := NewStack()
+		stack.Shift()
 
-		if s.Len() != 0 {
+		if stack.Len() != 0 {
 			t.Errorf("stack not empty after shift()")
 		}
 	})
@@ -78,13 +78,13 @@ func TestShift(t *testing.T) {
 
 func TestClear(t *testing.T) {
 	t.Run("clear", func(t *testing.T) {
-		s := NewStack()
-		s.Push(5)
-		s.Push(5)
-		s.Push(5)
-		s.Clear()
+		stack := NewStack()
+		stack.Push(5)
+		stack.Push(5)
+		stack.Push(5)
+		stack.Clear()
 
-		if s.Len() != 0 {
+		if stack.Len() != 0 {
 			t.Errorf("stack not empty after clear()")
 		}
 	})
@@ -92,9 +92,9 @@ func TestClear(t *testing.T) {
 
 func TestLast(t *testing.T) {
 	t.Run("last", func(t *testing.T) {
-		s := NewStack()
-		s.Push(5)
-		got := s.Last()
+		stack := NewStack()
+		stack.Push(5)
+		got := stack.Last()
 
 		if len(got) != 1 {
 			t.Errorf("last failed:\n+++  got: %d elements\n--- want: %d elements",
@@ -106,7 +106,7 @@ func TestLast(t *testing.T) {
 				got, 5.0)
 		}
 
-		if s.Len() != 1 {
+		if stack.Len() != 1 {
 			t.Errorf("stack modified after last()")
 		}
 	})
@@ -114,14 +114,14 @@ func TestLast(t *testing.T) {
 
 func TestAll(t *testing.T) {
 	t.Run("all", func(t *testing.T) {
-		s := NewStack()
+		stack := NewStack()
 		list := []float64{2, 4, 6, 8}
 
 		for _, item := range list {
-			s.Push(item)
+			stack.Push(item)
 		}
 
-		got := s.All()
+		got := stack.All()
 
 		if len(got) != len(list) {
 			t.Errorf("all failed:\n+++  got: %d elements\n--- want: %d elements",
@@ -135,7 +135,7 @@ func TestAll(t *testing.T) {
 			}
 		}
 
-		if s.Len() != len(list) {
+		if stack.Len() != len(list) {
 			t.Errorf("stack modified after last()")
 		}
 	})
@@ -143,37 +143,37 @@ func TestAll(t *testing.T) {
 
 func TestBackupRestore(t *testing.T) {
 	t.Run("shift", func(t *testing.T) {
-		s := NewStack()
-		s.Push(5)
-		s.Backup()
-		s.Clear()
-		s.Restore()
+		stack := NewStack()
+		stack.Push(5)
+		stack.Backup()
+		stack.Clear()
+		stack.Restore()
 
-		if s.Len() != 1 {
+		if stack.Len() != 1 {
 			t.Errorf("stack not correctly restored()")
 		}
 
-		a := s.Pop()
-		if a != 5.0 {
+		value := stack.Pop()
+		if value != 5.0 {
 			t.Errorf("stack not identical to old revision:\n+++  got: %f\n--- want: %f",
-				a, 5.0)
+				value, 5.0)
 		}
 	})
 }
 
 func TestReverse(t *testing.T) {
 	t.Run("reverse", func(t *testing.T) {
-		s := NewStack()
+		stack := NewStack()
 		list := []float64{2, 4, 6}
 		reverse := []float64{6, 4, 2}
 
 		for _, item := range list {
-			s.Push(item)
+			stack.Push(item)
 		}
 
-		s.Reverse()
+		stack.Reverse()
 
-		got := s.All()
+		got := stack.All()
 
 		if len(got) != len(list) {
 			t.Errorf("all failed:\n+++  got: %d elements\n--- want: %d elements",

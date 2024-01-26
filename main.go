@@ -81,11 +81,13 @@ func Main() int {
 
 	if showversion {
 		fmt.Printf("This is rpn version %s\n", VERSION)
+
 		return 0
 	}
 
 	if showhelp {
 		fmt.Println(Usage)
+
 		return 0
 	}
 
@@ -95,12 +97,13 @@ func Main() int {
 
 	if showmanual {
 		man()
+
 		return 0
 	}
 
-	// the lua state object is global, instanciate it early
-	L = lua.NewState(lua.Options{SkipOpenLibs: true})
-	defer L.Close()
+	// the lua state object is global, instantiate it early
+	LuaInterpreter = lua.NewState(lua.Options{SkipOpenLibs: true})
+	defer LuaInterpreter.Close()
 
 	// our config file is interpreted  as lua code, only functions can
 	// be defined, init() will be called by InitLua().
@@ -108,13 +111,12 @@ func Main() int {
 		luarunner := NewInterpreter(configfile, enabledebug)
 		luarunner.InitLua()
 		calc.SetInt(luarunner)
+
 		if calc.debug {
 			fmt.Println("loaded config")
 		}
-	} else {
-		if calc.debug {
-			fmt.Println(err)
-		}
+	} else if calc.debug {
+		fmt.Println(err)
 	}
 
 	if len(flag.Args()) > 1 {
@@ -123,6 +125,7 @@ func Main() int {
 		calc.stdin = true
 		if err := calc.Eval(strings.Join(flag.Args(), " ")); err != nil {
 			fmt.Println(err)
+
 			return 1
 		}
 
@@ -130,7 +133,7 @@ func Main() int {
 	}
 
 	// interactive mode, need readline
-	rl, err := readline.NewEx(&readline.Config{
+	reader, err := readline.NewEx(&readline.Config{
 		Prompt:            calc.Prompt(),
 		HistoryFile:       os.Getenv("HOME") + "/.rpn-history",
 		HistoryLimit:      500,
@@ -143,8 +146,8 @@ func Main() int {
 	if err != nil {
 		panic(err)
 	}
-	defer rl.Close()
-	rl.CaptureExitSignal()
+	defer reader.Close()
+	reader.CaptureExitSignal()
 
 	if inputIsStdin() {
 		// commands are  coming on stdin, however we  will still enter
@@ -154,7 +157,7 @@ func Main() int {
 
 	for {
 		// primary program repl
-		line, err := rl.Readline()
+		line, err := reader.Readline()
 		if err != nil {
 			break
 		}
@@ -163,7 +166,8 @@ func Main() int {
 		if err != nil {
 			fmt.Println(err)
 		}
-		rl.SetPrompt(calc.Prompt())
+
+		reader.SetPrompt(calc.Prompt())
 	}
 
 	if len(flag.Args()) > 0 {
@@ -173,6 +177,7 @@ func Main() int {
 		calc.batch = true
 		if err = calc.Eval(flag.Args()[0]); err != nil {
 			fmt.Println(err)
+
 			return 1
 		}
 	}
@@ -182,17 +187,19 @@ func Main() int {
 
 func inputIsStdin() bool {
 	stat, _ := os.Stdin.Stat()
+
 	return (stat.Mode() & os.ModeCharDevice) == 0
 }
 
 func man() {
+	var buf bytes.Buffer
+
 	man := exec.Command("less", "-")
 
-	var b bytes.Buffer
-	b.Write([]byte(manpage))
+	buf.WriteString(manpage)
 
 	man.Stdout = os.Stdout
-	man.Stdin = &b
+	man.Stdin = &buf
 	man.Stderr = os.Stderr
 
 	err := man.Run()

@@ -30,6 +30,7 @@ func contains[E comparable](s []E, v E) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -38,6 +39,7 @@ func exists[K comparable, V any](m map[K]V, v K) bool {
 	if _, ok := m[v]; ok {
 		return true
 	}
+
 	return false
 }
 
@@ -73,5 +75,5 @@ func list2str(list Numbers) string {
 }
 
 func Error(m string) error {
-	return fmt.Errorf("Error: %s!", m)
+	return fmt.Errorf("Error: %s", m)
 }

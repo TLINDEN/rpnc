@@ -64,14 +64,14 @@ func (s *Stack) Bump() {
 }
 
 // append an item to the stack
-func (s *Stack) Push(x float64) {
+func (s *Stack) Push(item float64) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	s.Debug(fmt.Sprintf("     push to stack: %.2f", x))
+	s.Debug(fmt.Sprintf("     push to stack: %.2f", item))
 
 	s.Bump()
-	s.linklist.PushBack(x)
+	s.linklist.PushBack(item)
 }
 
 // remove and return an item from the stack
@@ -90,6 +90,7 @@ func (s *Stack) Pop() float64 {
 	s.Debug(fmt.Sprintf(" remove from stack: %.2f", val))
 
 	s.Bump()
+
 	return val.(float64)
 }
 
@@ -123,32 +124,33 @@ func (s *Stack) Swap() {
 		return
 	}
 
-	a := s.linklist.Back()
-	s.linklist.Remove(a)
+	prevA := s.linklist.Back()
+	s.linklist.Remove(prevA)
 
-	b := s.linklist.Back()
-	s.linklist.Remove(b)
+	prevB := s.linklist.Back()
+	s.linklist.Remove(prevB)
 
-	s.Debug(fmt.Sprintf("swapping %.2f with %.2f", b.Value, a.Value))
+	s.Debug(fmt.Sprintf("swapping %.2f with %.2f", prevB.Value, prevA.Value))
 
-	s.linklist.PushBack(a.Value)
-	s.linklist.PushBack(b.Value)
+	s.linklist.PushBack(prevA.Value)
+	s.linklist.PushBack(prevB.Value)
 }
 
 // Return the last num items from the stack w/o modifying it.
 func (s *Stack) Last(num ...int) []float64 {
 	items := []float64{}
-	i := s.Len()
+	stacklen := s.Len()
 	count := 1
+
 	if len(num) > 0 {
 		count = num[0]
 	}
 
 	for e := s.linklist.Front(); e != nil; e = e.Next() {
-		if i <= count {
+		if stacklen <= count {
 			items = append(items, e.Value.(float64))
 		}
-		i--
+		stacklen--
 	}
 
 	return items
@@ -168,12 +170,14 @@ func (s *Stack) All() []float64 {
 // dump the stack to stdout, including backup if debug is enabled
 func (s *Stack) Dump() {
 	fmt.Printf("Stack revision %d (%p):\n", s.rev, &s.linklist)
+
 	for e := s.linklist.Front(); e != nil; e = e.Next() {
 		fmt.Println(e.Value)
 	}
 
 	if s.debug {
 		fmt.Printf("Backup stack revision %d (%p):\n", s.backuprev, &s.backup)
+
 		for e := s.backup.Front(); e != nil; e = e.Next() {
 			fmt.Println(e.Value)
 		}
@@ -215,6 +219,7 @@ func (s *Stack) Restore() {
 
 	if s.rev == 0 {
 		fmt.Println("error: stack is empty.")
+
 		return
 	}
 
