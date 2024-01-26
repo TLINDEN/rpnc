@@ -1,5 +1,5 @@
 /*
-Copyright © 2023 Thomas von Dein
+Copyright © 2023-2024 Thomas von Dein
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"sort"
 	"strconv"
@@ -35,6 +36,8 @@ type Calc struct {
 	showstack    bool
 	intermediate bool
 	notdone      bool // set to true as long as there are items left in the eval loop
+	precision    int
+
 	stack        *Stack
 	history      []string
 	completer    readline.AutoCompleter
@@ -91,6 +94,7 @@ Register variables:
 const (
 	//Commands  string = `dump reverse clear shift undo help history manual exit quit swap debug undebug nodebug batch nobatch showstack noshowstack vars`
 	Constants string = `Pi Phi Sqrt2 SqrtE SqrtPi SqrtPhi Ln2 Log2E Ln10 Log10E`
+	Precision int    = 2
 )
 
 // That way we can add custom functions to completion
@@ -150,7 +154,7 @@ func (c *Calc) GetCompleteCustomFuncalls() func(string) []string {
 }
 
 func NewCalc() *Calc {
-	c := Calc{stack: NewStack(), debug: false}
+	c := Calc{stack: NewStack(), debug: false, precision: Precision}
 
 	c.Funcalls = DefineFunctions()
 	c.BatchFuncalls = DefineBatchFunctions()
@@ -438,7 +442,16 @@ func (c *Calc) Result() float64 {
 			fmt.Print("= ")
 		}
 
-		fmt.Println(c.stack.Last()[0])
+		result := c.stack.Last()[0]
+		truncated := math.Trunc(result)
+		precision := c.precision
+
+		if result == truncated {
+			precision = 0
+		}
+
+		format := fmt.Sprintf("%%.%df\n", precision)
+		fmt.Printf(format, result)
 	}
 
 	return c.stack.Last()[0]
