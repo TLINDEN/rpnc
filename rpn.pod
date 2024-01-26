@@ -136,7 +136,7 @@ stack.
 Basic operators:
 
     +                    add
-    -                    substract
+    -                    subtract
     /                    divide
     x                    multiply (alias: *)
     ^                    power
@@ -152,7 +152,7 @@ Bitwise operators:
 Percent functions:
 
     %                    percent
-    %-                   substract percent
+    %-                   subtract percent
     %+                   add percent
 
 Batch functions:

@@ -22,14 +22,14 @@ import (
 	"math"
 )
 
-type R struct {
+type Result struct {
 	Res float64
 	Err error
 }
 
 type Numbers []float64
 
-type Function func(Numbers) R
+type Function func(Numbers) Result
 
 // every function we  are able to call must be  of type Funcall, which
 // needs to  specify how  many numbers  it expects  and the  actual go
@@ -64,446 +64,450 @@ func NewFuncall(function Function, expectargs ...int) *Funcall {
 }
 
 // Convenience function, create new result
-func NewR(n float64, e error) R {
-	return R{Res: n, Err: e}
+func NewResult(n float64, e error) Result {
+	return Result{Res: n, Err: e}
 }
 
 // the actual functions, called once during initialization.
 func DefineFunctions() Funcalls {
-	f := map[string]*Funcall{
+	funcmap := map[string]*Funcall{
 		// simple operators, they all expect 2 args
 		"+": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(arg[0]+arg[1], nil)
+			func(arg Numbers) Result {
+				return NewResult(arg[0]+arg[1], nil)
 			},
 		),
 
 		"-": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(arg[0]-arg[1], nil)
+			func(arg Numbers) Result {
+				return NewResult(arg[0]-arg[1], nil)
 			},
 		),
 
 		"x": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(arg[0]*arg[1], nil)
+			func(arg Numbers) Result {
+				return NewResult(arg[0]*arg[1], nil)
 			},
 		),
 
 		"/": NewFuncall(
-			func(arg Numbers) R {
+			func(arg Numbers) Result {
 				if arg[1] == 0 {
-					return NewR(0, errors.New("division by null"))
+					return NewResult(0, errors.New("division by null"))
 				}
 
-				return NewR(arg[0]/arg[1], nil)
+				return NewResult(arg[0]/arg[1], nil)
 			},
 		),
 
 		"^": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Pow(arg[0], arg[1]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Pow(arg[0], arg[1]), nil)
 			},
 		),
 
 		"%": NewFuncall(
-			func(arg Numbers) R {
-				return NewR((arg[0]/100)*arg[1], nil)
+			func(arg Numbers) Result {
+				return NewResult((arg[0]/100)*arg[1], nil)
 			},
 		),
 
 		"%-": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(arg[0]-((arg[0]/100)*arg[1]), nil)
+			func(arg Numbers) Result {
+				return NewResult(arg[0]-((arg[0]/100)*arg[1]), nil)
 			},
 		),
 
 		"%+": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(arg[0]+((arg[0]/100)*arg[1]), nil)
+			func(arg Numbers) Result {
+				return NewResult(arg[0]+((arg[0]/100)*arg[1]), nil)
 			},
 		),
 
 		"mod": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Remainder(arg[0], arg[1]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Remainder(arg[0], arg[1]), nil)
 			},
 		),
 
 		"sqrt": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Sqrt(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Sqrt(arg[0]), nil)
 			},
 			1),
 
 		"abs": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Abs(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Abs(arg[0]), nil)
 			},
 			1),
 
 		"acos": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Acos(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Acos(arg[0]), nil)
 			},
 			1),
 
 		"acosh": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Acosh(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Acosh(arg[0]), nil)
 			},
 			1),
 
 		"asin": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Asin(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Asin(arg[0]), nil)
 			},
 			1),
 
 		"asinh": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Asinh(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Asinh(arg[0]), nil)
 			},
 			1),
 
 		"atan": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Atan(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Atan(arg[0]), nil)
 			},
 			1),
 
 		"atan2": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Atan2(arg[0], arg[1]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Atan2(arg[0], arg[1]), nil)
 			},
 			2),
 
 		"atanh": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Atanh(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Atanh(arg[0]), nil)
 			},
 			1),
 
 		"cbrt": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Cbrt(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Cbrt(arg[0]), nil)
 			},
 			1),
 
 		"ceil": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Ceil(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Ceil(arg[0]), nil)
 			},
 			1),
 
 		"cos": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Cos(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Cos(arg[0]), nil)
 			},
 			1),
 
 		"cosh": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Cosh(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Cosh(arg[0]), nil)
 			},
 			1),
 
 		"erf": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Erf(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Erf(arg[0]), nil)
 			},
 			1),
 
 		"erfc": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Erfc(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Erfc(arg[0]), nil)
 			},
 			1),
 
 		"erfcinv": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Erfcinv(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Erfcinv(arg[0]), nil)
 			},
 			1),
 
 		"erfinv": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Erfinv(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Erfinv(arg[0]), nil)
 			},
 			1),
 
 		"exp": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Exp(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Exp(arg[0]), nil)
 			},
 			1),
 
 		"exp2": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Exp2(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Exp2(arg[0]), nil)
 			},
 			1),
 
 		"expm1": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Expm1(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Expm1(arg[0]), nil)
 			},
 			1),
 
 		"floor": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Floor(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Floor(arg[0]), nil)
 			},
 			1),
 
 		"gamma": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Gamma(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Gamma(arg[0]), nil)
 			},
 			1),
 
 		"ilogb": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(float64(math.Ilogb(arg[0])), nil)
+			func(arg Numbers) Result {
+				return NewResult(float64(math.Ilogb(arg[0])), nil)
 			},
 			1),
 
 		"j0": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.J0(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.J0(arg[0]), nil)
 			},
 			1),
 
 		"j1": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.J1(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.J1(arg[0]), nil)
 			},
 			1),
 
 		"log": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Log(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Log(arg[0]), nil)
 			},
 			1),
 
 		"log10": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Log10(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Log10(arg[0]), nil)
 			},
 			1),
 
 		"log1p": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Log1p(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Log1p(arg[0]), nil)
 			},
 			1),
 
 		"log2": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Log2(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Log2(arg[0]), nil)
 			},
 			1),
 
 		"logb": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Logb(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Logb(arg[0]), nil)
 			},
 			1),
 
 		"pow": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Pow(arg[0], arg[1]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Pow(arg[0], arg[1]), nil)
 			},
 			2),
 
 		"round": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Round(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Round(arg[0]), nil)
 			},
 			1),
 
 		"roundtoeven": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.RoundToEven(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.RoundToEven(arg[0]), nil)
 			},
 			1),
 
 		"sin": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Sin(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Sin(arg[0]), nil)
 			},
 			1),
 
 		"sinh": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Sinh(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Sinh(arg[0]), nil)
 			},
 			1),
 
 		"tan": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Tan(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Tan(arg[0]), nil)
 			},
 			1),
 
 		"tanh": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Tanh(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Tanh(arg[0]), nil)
 			},
 			1),
 
 		"trunc": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Trunc(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Trunc(arg[0]), nil)
 			},
 			1),
 
 		"y0": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Y0(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Y0(arg[0]), nil)
 			},
 			1),
 
 		"y1": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Y1(arg[0]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Y1(arg[0]), nil)
 			},
 			1),
 
 		"copysign": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Copysign(arg[0], arg[1]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Copysign(arg[0], arg[1]), nil)
 			},
 			2),
 
 		"dim": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Dim(arg[0], arg[1]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Dim(arg[0], arg[1]), nil)
 			},
 			2),
 
 		"hypot": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(math.Hypot(arg[0], arg[1]), nil)
+			func(arg Numbers) Result {
+				return NewResult(math.Hypot(arg[0], arg[1]), nil)
 			},
 			2),
 
 		// converters of all kinds
 		"cm-to-inch": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(arg[0]/2.54, nil)
+			func(arg Numbers) Result {
+				return NewResult(arg[0]/2.54, nil)
 			},
 			1),
 
 		"inch-to-cm": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(arg[0]*2.54, nil)
+			func(arg Numbers) Result {
+				return NewResult(arg[0]*2.54, nil)
 			},
 			1),
 
 		"gallons-to-liters": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(arg[0]*3.785, nil)
+			func(arg Numbers) Result {
+				return NewResult(arg[0]*3.785, nil)
 			},
 			1),
 
 		"liters-to-gallons": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(arg[0]/3.785, nil)
+			func(arg Numbers) Result {
+				return NewResult(arg[0]/3.785, nil)
 			},
 			1),
 
 		"yards-to-meters": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(arg[0]*91.44, nil)
+			func(arg Numbers) Result {
+				return NewResult(arg[0]*91.44, nil)
 			},
 			1),
 
 		"meters-to-yards": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(arg[0]/91.44, nil)
+			func(arg Numbers) Result {
+				return NewResult(arg[0]/91.44, nil)
 			},
 			1),
 
 		"miles-to-kilometers": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(arg[0]*1.609, nil)
+			func(arg Numbers) Result {
+				return NewResult(arg[0]*1.609, nil)
 			},
 			1),
 
 		"kilometers-to-miles": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(arg[0]/1.609, nil)
+			func(arg Numbers) Result {
+				return NewResult(arg[0]/1.609, nil)
 			},
 			1),
 
 		"or": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(float64(int(arg[0])|int(arg[1])), nil)
+			func(arg Numbers) Result {
+				return NewResult(float64(int(arg[0])|int(arg[1])), nil)
 			},
 			2),
 
 		"and": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(float64(int(arg[0])&int(arg[1])), nil)
+			func(arg Numbers) Result {
+				return NewResult(float64(int(arg[0])&int(arg[1])), nil)
 			},
 			2),
 
 		"xor": NewFuncall(
-			func(arg Numbers) R {
-				return NewR(float64(int(arg[0])^int(arg[1])), nil)
+			func(arg Numbers) Result {
+				return NewResult(float64(int(arg[0])^int(arg[1])), nil)
 			},
 			2),
 
 		"<": NewFuncall(
-			func(arg Numbers) R {
+			func(arg Numbers) Result {
 				// Shift by negative number provibited, so check it.
-				// Note that we check agains uint64 overflow as well here
+				// Note that we check against uint64 overflow as well here
 				if arg[1] < 0 || uint64(arg[1]) > math.MaxInt64 {
-					return NewR(0, errors.New("negative shift amount"))
+					return NewResult(0, errors.New("negative shift amount"))
 				}
-				return NewR(float64(int(arg[0])<<int(arg[1])), nil)
+
+				return NewResult(float64(int(arg[0])<<int(arg[1])), nil)
 			},
 			2),
 
 		">": NewFuncall(
-			func(arg Numbers) R {
+			func(arg Numbers) Result {
 				if arg[1] < 0 || uint64(arg[1]) > math.MaxInt64 {
-					return NewR(0, errors.New("negative shift amount"))
+					return NewResult(0, errors.New("negative shift amount"))
 				}
-				return NewR(float64(int(arg[0])>>int(arg[1])), nil)
+
+				return NewResult(float64(int(arg[0])>>int(arg[1])), nil)
 			},
 			2),
 	}
 
 	// aliases
-	f["*"] = f["x"]
-	f["remainder"] = f["mod"]
+	funcmap["*"] = funcmap["x"]
+	funcmap["remainder"] = funcmap["mod"]
 
-	return f
+	return funcmap
 }
 
 func DefineBatchFunctions() Funcalls {
-	f := map[string]*Funcall{
+	funcmap := map[string]*Funcall{
 		"median": NewFuncall(
-			func(args Numbers) R {
+			func(args Numbers) Result {
 				middle := len(args) / 2
-				return NewR(args[middle], nil)
+
+				return NewResult(args[middle], nil)
 			},
 			-1),
 
 		"mean": NewFuncall(
-			func(args Numbers) R {
+			func(args Numbers) Result {
 				var sum float64
 				for _, item := range args {
 					sum += item
 				}
-				return NewR(sum/float64(len(args)), nil)
+
+				return NewResult(sum/float64(len(args)), nil)
 			},
 			-1),
 
 		"min": NewFuncall(
-			func(args Numbers) R {
+			func(args Numbers) Result {
 				var min float64
 				min, args = args[0], args[1:]
 				for _, item := range args {
@@ -511,12 +515,13 @@ func DefineBatchFunctions() Funcalls {
 						min = item
 					}
 				}
-				return NewR(min, nil)
+
+				return NewResult(min, nil)
 			},
 			-1),
 
 		"max": NewFuncall(
-			func(args Numbers) R {
+			func(args Numbers) Result {
 				var max float64
 				max, args = args[0], args[1:]
 				for _, item := range args {
@@ -524,24 +529,26 @@ func DefineBatchFunctions() Funcalls {
 						max = item
 					}
 				}
-				return NewR(max, nil)
+
+				return NewResult(max, nil)
 			},
 			-1),
 
 		"sum": NewFuncall(
-			func(args Numbers) R {
+			func(args Numbers) Result {
 				var sum float64
 				for _, item := range args {
 					sum += item
 				}
-				return NewR(sum, nil)
+
+				return NewResult(sum, nil)
 			},
 			-1),
 	}
 
 	// aliases
-	f["+"] = f["sum"]
-	f["avg"] = f["mean"]
+	funcmap["+"] = funcmap["sum"]
+	funcmap["avg"] = funcmap["mean"]
 
-	return f
+	return funcmap
 }

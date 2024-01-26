@@ -69,7 +69,7 @@ Bitwise operators: and or xor < (left shift) > (right shift)
 
 Percent functions:
 %                    percent
-%-                   substract percent
+%-                   subtract percent
 %+                   add percent
 
 Math functions (see https://pkg.go.dev/math):
@@ -92,9 +92,9 @@ Register variables:
 // commands, constants and operators,  defined here to feed completion
 // and our mode switch in Eval() dynamically
 const (
-	//Commands  string = `dump reverse clear shift undo help history manual exit quit swap debug undebug nodebug batch nobatch showstack noshowstack vars`
-	Constants string = `Pi Phi Sqrt2 SqrtE SqrtPi SqrtPhi Ln2 Log2E Ln10 Log10E`
-	Precision int    = 2
+	Constants    string = `Pi Phi Sqrt2 SqrtE SqrtPi SqrtPhi Ln2 Log2E Ln10 Log10E`
+	Precision    int    = 2
+	ShowStackLen int    = 5
 )
 
 // That way we can add custom functions to completion
@@ -150,37 +150,36 @@ func (c *Calc) GetCompleteCustomFuncalls() func(string) []string {
 
 		return completions
 	}
-
 }
 
 func NewCalc() *Calc {
-	c := Calc{stack: NewStack(), debug: false, precision: Precision}
+	calc := Calc{stack: NewStack(), debug: false, precision: Precision}
 
-	c.Funcalls = DefineFunctions()
-	c.BatchFuncalls = DefineBatchFunctions()
-	c.Vars = map[string]float64{}
+	calc.Funcalls = DefineFunctions()
+	calc.BatchFuncalls = DefineBatchFunctions()
+	calc.Vars = map[string]float64{}
 
-	c.completer = readline.NewPrefixCompleter(
+	calc.completer = readline.NewPrefixCompleter(
 		// custom lua functions
 		readline.PcItemDynamic(GetCompleteCustomFunctions()),
-		readline.PcItemDynamic(c.GetCompleteCustomFuncalls()),
+		readline.PcItemDynamic(calc.GetCompleteCustomFuncalls()),
 	)
 
-	c.Space = regexp.MustCompile(`\s+`)
-	c.Comment = regexp.MustCompile(`#.*`) // ignore everything after #
-	c.Register = regexp.MustCompile(`^([<>])([A-Z][A-Z0-9]*)`)
+	calc.Space = regexp.MustCompile(`\s+`)
+	calc.Comment = regexp.MustCompile(`#.*`) // ignore everything after #
+	calc.Register = regexp.MustCompile(`^([<>])([A-Z][A-Z0-9]*)`)
 
 	// pre-calculate mode switching arrays
-	c.Constants = strings.Split(Constants, " ")
+	calc.Constants = strings.Split(Constants, " ")
 
-	c.SetCommands()
+	calc.SetCommands()
 
-	return &c
+	return &calc
 }
 
 // setup the interpreter, called from main(), import lua functions
-func (c *Calc) SetInt(I *Interpreter) {
-	c.interpreter = I
+func (c *Calc) SetInt(interpreter *Interpreter) {
+	c.interpreter = interpreter
 
 	for name := range LuaFuncs {
 		c.LuaFunctions = append(c.LuaFunctions, name)
@@ -207,22 +206,22 @@ func (c *Calc) ToggleShow() {
 }
 
 func (c *Calc) Prompt() string {
-	p := "\033[31m»\033[0m "
-	b := ""
+	prompt := "\033[31m»\033[0m "
+	batch := ""
 
 	if c.batch {
-		b = "->batch"
+		batch = "->batch"
 	}
 
-	d := ""
-	v := ""
+	debug := ""
+	revision := ""
 
 	if c.debug {
-		d = "->debug"
-		v = fmt.Sprintf("/rev%d", c.stack.rev)
+		debug = "->debug"
+		revision = fmt.Sprintf("/rev%d", c.stack.rev)
 	}
 
-	return fmt.Sprintf("rpn%s%s [%d%s]%s", b, d, c.stack.Len(), v, p)
+	return fmt.Sprintf("rpn%s%s [%d%s]%s", batch, debug, c.stack.Len(), revision, prompt)
 }
 
 // the actual work horse, evaluate a line of calc command[s]
@@ -251,10 +250,12 @@ func (c *Calc) Eval(line string) error {
 	if c.showstack && !c.stdin {
 		dots := ""
 
-		if c.stack.Len() > 5 {
+		if c.stack.Len() > ShowStackLen {
 			dots = "... "
 		}
-		last := c.stack.Last(5)
+
+		last := c.stack.Last(ShowStackLen)
+
 		fmt.Printf("stack: %s%s\n", dots, list2str(last))
 	}
 
@@ -267,93 +268,106 @@ func (c *Calc) EvalItem(item string) error {
 	if err == nil {
 		c.stack.Backup()
 		c.stack.Push(num)
-	} else {
-		// try hex
-		var i int
-		_, err := fmt.Sscanf(item, "0x%x", &i)
-		if err == nil {
-			c.stack.Backup()
-			c.stack.Push(float64(i))
-			return nil
+
+		return nil
+	}
+
+	// try hex
+	var i int
+
+	_, err = fmt.Sscanf(item, "0x%x", &i)
+	if err == nil {
+		c.stack.Backup()
+		c.stack.Push(float64(i))
+
+		return nil
+	}
+
+	if contains(c.Constants, item) {
+		// put the constant onto the stack
+		c.stack.Backup()
+		c.stack.Push(const2num(item))
+
+		return nil
+	}
+
+	if exists(c.Funcalls, item) {
+		if err := c.DoFuncall(item); err != nil {
+			return Error(err.Error())
 		}
 
-		if contains(c.Constants, item) {
-			// put the constant onto the stack
-			c.stack.Backup()
-			c.stack.Push(const2num(item))
-			return nil
+		c.Result()
+
+		return nil
+	}
+
+	if exists(c.BatchFuncalls, item) {
+		if !c.batch {
+			return Error("only supported in batch mode")
 		}
 
-		if exists(c.Funcalls, item) {
-			if err := c.DoFuncall(item); err != nil {
-				return Error(err.Error())
-			} else {
-				c.Result()
-			}
-			return nil
+		if err := c.DoFuncall(item); err != nil {
+			return Error(err.Error())
 		}
 
-		if exists(c.BatchFuncalls, item) {
-			if !c.batch {
-				return Error("only supported in batch mode")
-			}
+		c.Result()
 
-			if err := c.DoFuncall(item); err != nil {
-				return Error(err.Error())
-			} else {
-				c.Result()
-			}
-			return nil
+		return nil
+	}
+
+	if contains(c.LuaFunctions, item) {
+		// user provided custom lua functions
+		c.EvalLuaFunction(item)
+
+		return nil
+	}
+
+	regmatches := c.Register.FindStringSubmatch(item)
+	if len(regmatches) == 3 {
+		switch regmatches[1] {
+		case ">":
+			c.PutVar(regmatches[2])
+		case "<":
+			c.GetVar(regmatches[2])
 		}
 
-		if contains(c.LuaFunctions, item) {
-			// user provided custom lua functions
-			c.EvalLuaFunction(item)
-			return nil
-		}
+		return nil
+	}
 
-		regmatches := c.Register.FindStringSubmatch(item)
-		if len(regmatches) == 3 {
-			switch regmatches[1] {
-			case ">":
-				c.PutVar(regmatches[2])
-			case "<":
-				c.GetVar(regmatches[2])
-			}
-			return nil
-		}
+	// internal commands
+	// FIXME: propagate errors
+	if exists(c.Commands, item) {
+		c.Commands[item].Func(c)
 
-		// internal commands
-		// FIXME: propagate errors
-		if exists(c.Commands, item) {
-			c.Commands[item].Func(c)
-			return nil
-		}
+		return nil
+	}
 
-		if exists(c.ShowCommands, item) {
-			c.ShowCommands[item].Func(c)
-			return nil
-		}
+	if exists(c.ShowCommands, item) {
+		c.ShowCommands[item].Func(c)
 
-		if exists(c.StackCommands, item) {
-			c.StackCommands[item].Func(c)
-			return nil
-		}
+		return nil
+	}
 
-		if exists(c.SettingsCommands, item) {
-			c.SettingsCommands[item].Func(c)
-			return nil
-		}
+	if exists(c.StackCommands, item) {
+		c.StackCommands[item].Func(c)
 
-		switch item {
-		case "?":
-			fallthrough
-		case "help":
-			c.PrintHelp()
+		return nil
+	}
 
-		default:
-			return Error("unknown command or operator")
-		}
+	if exists(c.SettingsCommands, item) {
+		c.SettingsCommands[item].Func(c)
+
+		return nil
+	}
+
+	switch item {
+	case "?":
+		fallthrough
+	case "help":
+		c.PrintHelp()
+
+	default:
+		return Error("unknown command or operator")
 	}
 
 	return nil
@@ -373,6 +387,7 @@ func (c *Calc) DoFuncall(funcname string) error {
 	}
 
 	var args Numbers
+
 	batch := false
 
 	if function.Expectargs == -1 {
@@ -394,11 +409,11 @@ func (c *Calc) DoFuncall(funcname string) error {
 	// the  actual lambda call, so  to say. We provide  a slice of
 	// the requested size, fetched  from the stack (but not popped
 	// yet!)
-	R := function.Func(args)
+	funcresult := function.Func(args)
 
-	if R.Err != nil {
+	if funcresult.Err != nil {
 		// leave the stack untouched in case of any error
-		return R.Err
+		return funcresult.Err
 	}
 
 	// don't forget to backup!
@@ -414,10 +429,11 @@ func (c *Calc) DoFuncall(funcname string) error {
 	}
 
 	// save result
-	c.stack.Push(R.Res)
+	c.stack.Push(funcresult.Res)
 
 	// thanks a lot
-	c.SetHistory(funcname, args, R.Res)
+	c.SetHistory(funcname, args, funcresult.Res)
+
 	return nil
 }
 
@@ -465,24 +481,26 @@ func (c *Calc) Debug(msg string) {
 
 func (c *Calc) EvalLuaFunction(funcname string) {
 	// called from calc loop
-	var x float64
+	var luaresult float64
+
 	var err error
 
 	switch c.interpreter.FuncNumArgs(funcname) {
 	case 0:
 		fallthrough
 	case 1:
-		x, err = c.interpreter.CallLuaFunc(funcname, c.stack.Last())
+		luaresult, err = c.interpreter.CallLuaFunc(funcname, c.stack.Last())
 	case 2:
-		x, err = c.interpreter.CallLuaFunc(funcname, c.stack.Last(2))
+		luaresult, err = c.interpreter.CallLuaFunc(funcname, c.stack.Last(2))
 	case -1:
-		x, err = c.interpreter.CallLuaFunc(funcname, c.stack.All())
+		luaresult, err = c.interpreter.CallLuaFunc(funcname, c.stack.All())
 	default:
-		x, err = 0, errors.New("invalid number of argument requested")
+		luaresult, err = 0, errors.New("invalid number of argument requested")
 	}
 
 	if err != nil {
 		fmt.Println(err)
+
 		return
 	}
 
@@ -493,24 +511,26 @@ func (c *Calc) EvalLuaFunction(funcname string) {
 	switch c.interpreter.FuncNumArgs(funcname) {
 	case 0:
 		a := c.stack.Last()
+
 		if len(a) == 1 {
-			c.History("%s(%f) = %f", funcname, a, x)
+			c.History("%s(%f) = %f", funcname, a, luaresult)
 		}
+
 		dopush = false
 	case 1:
 		a := c.stack.Pop()
-		c.History("%s(%f) = %f", funcname, a, x)
+		c.History("%s(%f) = %f", funcname, a, luaresult)
 	case 2:
 		a := c.stack.Pop()
 		b := c.stack.Pop()
-		c.History("%s(%f,%f) = %f", funcname, a, b, x)
+		c.History("%s(%f,%f) = %f", funcname, a, b, luaresult)
 	case -1:
 		c.stack.Clear()
-		c.History("%s(*) = %f", funcname, x)
+		c.History("%s(*) = %f", funcname, luaresult)
 	}
 
 	if dopush {
-		c.stack.Push(x)
+		c.stack.Push(luaresult)
 	}
 
 	c.Result()
@@ -553,27 +573,35 @@ func sortcommands(hash Commands) []string {
 
 func (c *Calc) PrintHelp() {
 	fmt.Println("Available configuration commands:")
+
 	for _, name := range sortcommands(c.SettingsCommands) {
 		fmt.Printf("%-20s %s\n", name, c.SettingsCommands[name].Help)
 	}
+
 	fmt.Println()
 
 	fmt.Println("Available show commands:")
+
 	for _, name := range sortcommands(c.ShowCommands) {
 		fmt.Printf("%-20s %s\n", name, c.ShowCommands[name].Help)
 	}
+
 	fmt.Println()
 
 	fmt.Println("Available stack manipulation commands:")
+
 	for _, name := range sortcommands(c.StackCommands) {
 		fmt.Printf("%-20s %s\n", name, c.StackCommands[name].Help)
 	}
+
 	fmt.Println()
 
 	fmt.Println("Other commands:")
+
 	for _, name := range sortcommands(c.Commands) {
 		fmt.Printf("%-20s %s\n", name, c.Commands[name].Help)
 	}
+
 	fmt.Println()
 
 	fmt.Println(Help)
@@ -581,6 +609,7 @@ func (c *Calc) PrintHelp() {
 	// append lua functions, if any
 	if len(LuaFuncs) > 0 {
 		fmt.Println("Lua functions:")
+
 		for name, function := range LuaFuncs {
 			fmt.Printf("%-20s %s\n", name, function.help)
 		}

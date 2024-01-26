@@ -59,6 +59,14 @@ test: clean
 testfuzzy: clean
 	go test -fuzz ./... $(ARGS)
 
+testlint: test lint
+
+lint:
+	golangci-lint run
+
+lint-full:
+	golangci-lint run --enable-all --exclude-use-default --disable exhaustivestruct,exhaustruct,depguard,interfacer,deadcode,golint,structcheck,scopelint,varcheck,ifshort,maligned,nosnakecase,godot,funlen,gofumpt,cyclop,noctx,gochecknoglobals,paralleltest,forbidigo,godox,dupword,forcetypeassert,goerr113,gomnd
+
 singletest:
 	@echo "Call like this: make singletest TEST=TestPrepareColumns ARGS=-v"
 	go test -run $(TEST) $(ARGS)

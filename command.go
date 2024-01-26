@@ -42,9 +42,8 @@ func NewCommand(help string, function CommandFunction) *Command {
 	}
 }
 
-// define all management (that is: non calculation) commands
-func (c *Calc) SetCommands() {
-	c.SettingsCommands = Commands{
+func (c *Calc) SetSettingsCommands() Commands {
+	return Commands{
 		// Toggles
 		"debug": NewCommand(
 			"toggle debugging",
@@ -89,8 +88,10 @@ func (c *Calc) SetCommands() {
 			},
 		),
 	}
+}
 
-	c.ShowCommands = Commands{
+func (c *Calc) SetShowCommands() Commands {
+	return Commands{
 		// Display commands
 		"dump": NewCommand(
 			"display the stack contents",
@@ -131,8 +132,10 @@ func (c *Calc) SetCommands() {
 			},
 		),
 	}
+}
 
-	c.StackCommands = Commands{
+func (c *Calc) SetStackCommands() Commands {
+	return Commands{
 		"clear": NewCommand(
 			"clear the whole stack",
 			func(c *Calc) {
@@ -159,14 +162,7 @@ func (c *Calc) SetCommands() {
 
 		"swap": NewCommand(
 			"exchange the last two elements",
-			func(c *Calc) {
-				if c.stack.Len() < 2 {
-					fmt.Println("stack too small, can't swap")
-				} else {
-					c.stack.Backup()
-					c.stack.Swap()
-				}
-			},
+			CommandSwap,
 		),
 
 		"undo": NewCommand(
@@ -178,113 +174,21 @@ func (c *Calc) SetCommands() {
 
 		"dup": NewCommand(
 			"duplicate last stack item",
-			func(c *Calc) {
-				item := c.stack.Last()
-				if len(item) == 1 {
-					c.stack.Backup()
-					c.stack.Push(item[0])
-				} else {
-					fmt.Println("stack empty")
-				}
-			},
+			CommandDup,
 		),
 
 		"edit": NewCommand(
 			"edit the stack interactively",
-			func(c *Calc) {
-				if c.stack.Len() == 0 {
-					fmt.Println("empty stack")
-					return
-				}
-
-				c.stack.Backup()
-
-				// put the stack contents into a tmp file
-				tmp, err := os.CreateTemp("", "stack")
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
-				defer os.Remove(tmp.Name())
-
-				comment := `# add or remove numbers as you wish.
-# each number must be on its own line.
-# numbers must be floating point formatted.
-`
-				_, err = tmp.WriteString(comment)
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
-
-				for _, item := range c.stack.All() {
-					_, err = fmt.Fprintf(tmp, "%f\n", item)
-					if err != nil {
-						fmt.Println(err)
-						return
-					}
-				}
-
-				tmp.Close()
-
-				// determine which editor to use
-				editor := "vi"
-				enveditor, present := os.LookupEnv("EDITOR")
-				if present {
-					if editor != "" {
-						if _, err := os.Stat(editor); err == nil {
-							editor = enveditor
-						}
-					}
-				}
-
-				// execute editor with our tmp file containing current stack
-				cmd := exec.Command(editor, tmp.Name())
-
-				cmd.Stdin = os.Stdin
-				cmd.Stdout = os.Stdout
-				cmd.Stderr = os.Stderr
-
-				err = cmd.Run()
-				if err != nil {
-					fmt.Println("could not run editor command: ", err)
-					return
-				}
-
-				// read the file back in
-				modified, err := os.Open(tmp.Name())
-				if err != nil {
-					fmt.Println("Error opening file:", err)
-					return
-				}
-				defer modified.Close()
-
-				// reset the stack
-				c.stack.Clear()
-
-				// and put the new contents (if legit) back onto the stack
-				scanner := bufio.NewScanner(modified)
-				for scanner.Scan() {
-					line := strings.TrimSpace(c.Comment.ReplaceAllString(scanner.Text(), ""))
-					if line == "" {
-						continue
-					}
-
-					num, err := strconv.ParseFloat(line, 64)
-					if err != nil {
-						fmt.Printf("%s is not a floating point number!\n", line)
-						continue
-					}
-
-					c.stack.Push(num)
-				}
-
-				if err := scanner.Err(); err != nil {
-					fmt.Println("Error reading from file:", err)
-				}
-			},
+			CommandEdit,
 		),
 	}
+}
+
+// define all management (that is: non calculation) commands
+func (c *Calc) SetCommands() {
+	c.SettingsCommands = c.SetSettingsCommands()
+	c.ShowCommands = c.SetShowCommands()
+	c.StackCommands = c.SetStackCommands()
 
 	// general commands
 	c.Commands = Commands{
@@ -316,4 +220,127 @@ func (c *Calc) SetCommands() {
 
 	c.StackCommands["c"] = c.StackCommands["clear"]
 	c.StackCommands["u"] = c.StackCommands["undo"]
+}
+
+// added to the command map:
+func CommandSwap(c *Calc) {
+	if c.stack.Len() < 2 {
+		fmt.Println("stack too small, can't swap")
+	} else {
+		c.stack.Backup()
+		c.stack.Swap()
+	}
+}
+
+func CommandDup(c *Calc) {
+	item := c.stack.Last()
+	if len(item) == 1 {
+		c.stack.Backup()
+		c.stack.Push(item[0])
+	} else {
+		fmt.Println("stack empty")
+	}
+}
+
+func CommandEdit(calc *Calc) {
+	if calc.stack.Len() == 0 {
+		fmt.Println("empty stack")
+
+		return
+	}
+
+	calc.stack.Backup()
+
+	// put the stack contents into a tmp file
+	tmp, err := os.CreateTemp("", "stack")
+	if err != nil {
+		fmt.Println(err)
+
+		return
+	}
+
+	defer os.Remove(tmp.Name())
+
+	comment := `# add or remove numbers as you wish.
+# each number must be on its own line.
+# numbers must be floating point formatted.
+`
+	_, err = tmp.WriteString(comment)
+
+	if err != nil {
+		fmt.Println(err)
+
+		return
+	}
+
+	for _, item := range calc.stack.All() {
+		_, err = fmt.Fprintf(tmp, "%f\n", item)
+		if err != nil {
+			fmt.Println(err)
+
+			return
+		}
+	}
+
+	tmp.Close()
+
+	// determine which editor to use
+	editor := "vi"
+
+	enveditor, present := os.LookupEnv("EDITOR")
+	if present {
+		if editor != "" {
+			if _, err := os.Stat(editor); err == nil {
+				editor = enveditor
+			}
+		}
+	}
+
+	// execute editor with our tmp file containing current stack
+	cmd := exec.Command(editor, tmp.Name())
+
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err = cmd.Run()
+	if err != nil {
+		fmt.Println("could not run editor command: ", err)
+
+		return
+	}
+
+	// read the file back in
+	modified, err := os.Open(tmp.Name())
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+
+		return
+	}
+	defer modified.Close()
+
+	// reset the stack
+	calc.stack.Clear()
+
+	// and put the new contents (if legit) back onto the stack
+	scanner := bufio.NewScanner(modified)
+	for scanner.Scan() {
+		line := strings.TrimSpace(calc.Comment.ReplaceAllString(scanner.Text(), ""))
+		if line == "" {
+			continue
+		}
+
+		num, err := strconv.ParseFloat(line, 64)
+		if err != nil {
+			fmt.Printf("%s is not a floating point number!\n", line)
+
+			continue
+		}
+
+		calc.stack.Push(num)
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error reading from file:", err)
+	}
 }

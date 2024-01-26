@@ -129,7 +129,7 @@ DESCRIPTION
     Basic operators:
 
         +                    add
-        -                    substract
+        -                    subtract
         /                    divide
         x                    multiply (alias: *)
         ^                    power
@@ -145,7 +145,7 @@ DESCRIPTION
     Percent functions:
 
         %                    percent
-        %-                   substract percent
+        %-                   subtract percent
         %+                   add percent
 
     Batch functions:
