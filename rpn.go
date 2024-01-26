@@ -8,13 +8,15 @@ SYNOPSIS
         Usage: rpn [-bdvh] [<operator>]
     
         Options:
-          -b, --batchmode     enable batch mode
-          -d, --debug         enable debug mode
-          -s, --stack         show last 5 items of the stack (off by default)
-          -i  --intermediate  print intermediate results
-          -m, --manual        show manual
-          -v, --version       show version
-          -h, --help          show help
+          -b, --batchmode       enable batch mode
+          -d, --debug           enable debug mode
+          -s, --stack           show last 5 items of the stack (off by default)
+          -i  --intermediate    print intermediate results
+          -m, --manual          show manual
+          -c, --config <file>   load <file> containing LUA code
+          -p, --precision <int> floating point number precision (default 2)
+          -v, --version         show version
+          -h, --help            show help
     
         When <operator>  is given, batch  mode ist automatically  enabled. Use
         this only when working with stdin. E.g.: echo "2 3 4 5" | rpn +
@@ -309,6 +311,15 @@ EXTENDING RPN USING LUA
     So you can't open files, execute other programs or open a connection to
     the outside!
 
+CONFIGURATION
+    rpn can be configured via command line flags (see usage above). Most of
+    the flags are also available as interactive commands, such as "--batch"
+    has the same effect as the batch command.
+
+    The floating point number precision option "-p, --precision" however is
+    not available as interactive command, it MUST be configured on the
+    command line, if needed. The default precision is 2.
+
 GETTING HELP
     In interactive mode you can enter the help command (or ?) to get a short
     help along with a list of all supported operators and functions.
@@ -328,7 +339,7 @@ LICENSE
     This software is licensed under the GNU GENERAL PUBLIC LICENSE version
     3.
 
-    Copyright (c) 2023 by Thomas von Dein
+    Copyright (c) 2023-2024 by Thomas von Dein
 
     This software uses the following GO modules:
 

@@ -1,0 +1,2 @@
+exec testrpn -p 4 2 3 /
+stdout '0.6667\n'

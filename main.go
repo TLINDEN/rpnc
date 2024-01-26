@@ -1,5 +1,5 @@
 /*
-Copyright © 2023 Thomas von Dein
+Copyright © 2023-2024 Thomas von Dein
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -30,26 +30,27 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-const VERSION string = "2.0.13"
+const VERSION string = "2.1.0"
 
 const Usage string = `This is rpn, a reverse polish notation calculator cli.
 
 Usage: rpn [-bdvh] [<operator>]
 
 Options:
-  -b, --batchmode     enable batch mode
-  -d, --debug         enable debug mode
-  -s, --stack         show last 5 items of the stack (off by default)
-  -i  --intermediate  print intermediate results
-  -m, --manual        show manual
-  -c, --config <file> load <file> containing LUA code
-  -v, --version       show version
-  -h, --help          show help
+  -b, --batchmode       enable batch mode
+  -d, --debug           enable debug mode
+  -s, --stack           show last 5 items of the stack (off by default)
+  -i  --intermediate    print intermediate results
+  -m, --manual          show manual
+  -c, --config <file>   load <file> containing LUA code
+  -p, --precision <int> floating point number precision (default 2)
+  -v, --version         show version
+  -h, --help            show help
 
 When <operator>  is given, batch  mode ist automatically  enabled. Use
 this only when working with stdin. E.g.: echo "2 3 4 5" | rpn +
 
-Copyright (c) 2023 T.v.Dein`
+Copyright (c) 2023-2024 T.v.Dein`
 
 func main() {
 	os.Exit(Main())
@@ -74,6 +75,7 @@ func Main() int {
 	flag.BoolVarP(&showmanual, "manual", "m", false, "show manual")
 	flag.StringVarP(&configfile, "config", "c",
 		os.Getenv("HOME")+"/.rpn.lua", "config file (lua format)")
+	flag.IntVarP(&calc.precision, "precision", "p", Precision, "floating point precision")
 
 	flag.Parse()
 
