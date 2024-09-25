@@ -78,7 +78,7 @@ func TestCommentsAndWhitespace(t *testing.T) {
 		t.Run(testname, func(t *testing.T) {
 			for _, line := range test.cmd {
 				if err := calc.Eval(line); err != nil {
-					t.Errorf(err.Error())
+					t.Error(err.Error())
 				}
 			}
 			got := calc.stack.Last()
@@ -292,7 +292,7 @@ func TestCalc(t *testing.T) {
 		t.Run(testname, func(t *testing.T) {
 			calc.batch = test.batch
 			if err := calc.Eval(test.cmd); err != nil {
-				t.Errorf(err.Error())
+				t.Error(err.Error())
 			}
 			got := calc.Result()
 			calc.stack.Clear()
