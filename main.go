@@ -30,7 +30,7 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-const VERSION string = "2.1.0"
+const VERSION string = "2.1.1"
 
 const Usage string = `This is rpn, a reverse polish notation calculator cli.
 

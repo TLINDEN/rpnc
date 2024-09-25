@@ -1,6 +1,6 @@
 module rpn
 
-go 1.20
+go 1.22
 
 require (
 	github.com/chzyer/readline v1.5.1 // indirect
