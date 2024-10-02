@@ -214,6 +214,10 @@ func (c *Calc) SetCommands() {
 	c.SettingsCommands["b"] = c.SettingsCommands["batch"]
 	c.SettingsCommands["s"] = c.SettingsCommands["showstack"]
 
+	c.SettingsCommands["togglebatch"] = c.SettingsCommands["batch"]
+	c.SettingsCommands["toggledebug"] = c.SettingsCommands["debug"]
+	c.SettingsCommands["toggleshowstack"] = c.SettingsCommands["showstack"]
+
 	c.ShowCommands["h"] = c.ShowCommands["history"]
 	c.ShowCommands["p"] = c.ShowCommands["dump"]
 	c.ShowCommands["v"] = c.ShowCommands["vars"]
