@@ -381,7 +381,7 @@ func FuzzEval(f *testing.F) {
 
 	calc := NewCalc()
 
-	var hexnum int
+	var hexnum, hour, min int
 
 	f.Fuzz(func(t *testing.T, line string) {
 		t.Logf("Stack:\n%v\n", calc.stack.All())
@@ -391,6 +391,7 @@ func FuzzEval(f *testing.F) {
 			if !contains(legal, line) && len(line) > 0 {
 				item := strings.TrimSpace(calc.Comment.ReplaceAllString(line, ""))
 				_, hexerr := fmt.Sscanf(item, "0x%x", &hexnum)
+				_, timeerr := fmt.Sscanf(item, "%d:%d", &hour, &min)
 				// no comment?
 				if len(item) > 0 {
 					// no known command or function?
@@ -405,7 +406,8 @@ func FuzzEval(f *testing.F) {
 							!exists(calc.StackCommands, item) &&
 							!calc.Register.MatchString(item) &&
 							item != "?" && item != "help" &&
-							hexerr != nil {
+							hexerr != nil &&
+							timeerr != nil {
 							t.Errorf("Fuzzy input accepted: <%s>", line)
 						}
 					}

@@ -108,7 +108,8 @@ DESCRIPTION
     is enabled automatically, see last example.
 
     You can enter integers, floating point numbers (positive or negative) or
-    hex numbers (prefixed with 0x).
+    hex numbers (prefixed with 0x). Time values in hh::mm format are
+    possible as well.
 
   STACK MANIPULATION
     There are lots of stack manipulation commands provided. The most

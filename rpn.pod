@@ -112,7 +112,8 @@ If the first parameter to rpn is a math operator or function, batch
 mode is enabled automatically, see last example.
 
 You can enter integers, floating  point numbers (positive or negative)
-or hex numbers (prefixed with 0x).
+or hex  numbers (prefixed with 0x).  Time values in hh::mm  format are
+possible as well.
 
 =head2 STACK MANIPULATION
 

@@ -272,9 +272,18 @@ func (c *Calc) EvalItem(item string) error {
 		return nil
 	}
 
+	// try time
+	var hour, min int
+	_, err = fmt.Sscanf(item, "%d:%d", &hour, &min)
+	if err == nil {
+		c.stack.Backup()
+		c.stack.Push(float64(hour) + float64(min)/60)
+
+		return nil
+	}
+
 	// try hex
 	var i int
-
 	_, err = fmt.Sscanf(item, "0x%x", &i)
 	if err == nil {
 		c.stack.Backup()

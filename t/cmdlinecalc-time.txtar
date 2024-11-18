@@ -1,0 +1,2 @@
+exec testrpn 09:55 4:15 -
+stdout '5.67\n'
