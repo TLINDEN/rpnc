@@ -370,9 +370,7 @@ func (c *Calc) EvalItem(item string) error {
 	}
 
 	switch item {
-	case "?":
-		fallthrough
-	case "help":
+	case "?", "help":
 		c.PrintHelp()
 
 	default:

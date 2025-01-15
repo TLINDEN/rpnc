@@ -116,9 +116,7 @@ func (i *Interpreter) CallLuaFunc(funcname string, items []float64) (float64, er
 		funcname, LuaFuncs[funcname].numargs))
 
 	switch LuaFuncs[funcname].numargs {
-	case 0:
-		fallthrough
-	case 1:
+	case 0, 1:
 		// 1 arg variant
 		if err := LuaInterpreter.CallByParam(lua.P{
 			Fn:      LuaInterpreter.GetGlobal(funcname),
