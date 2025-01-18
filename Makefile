@@ -81,8 +81,8 @@ goupdate:
 buildall:
 	./mkrel.sh $(tool) $(VERSION)
 
-release: buildall
-	gh release create v$(VERSION) --generate-notes releases/*
+release:
+	gh release create v$(VERSION) --generate-notes
 
 show-versions: buildlocal
 	@echo "### rpn version:"
