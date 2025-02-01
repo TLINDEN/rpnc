@@ -30,7 +30,7 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-const VERSION string = "2.1.3"
+const VERSION string = "2.1.4"
 
 const Usage string = `This is rpn, a reverse polish notation calculator cli.
 
@@ -50,7 +50,7 @@ Options:
 When <operator>  is given, batch  mode ist automatically  enabled. Use
 this only when working with stdin. E.g.: echo "2 3 4 5" | rpn +
 
-Copyright (c) 2023-2024 T.v.Dein`
+Copyright (c) 2023-2025 T.v.Dein`
 
 func main() {
 	os.Exit(Main())
