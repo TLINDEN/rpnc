@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/chzyer/readline v1.5.1
 	github.com/rogpeppe/go-internal v1.13.1
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6
 	github.com/yuin/gopher-lua v1.1.1
 )
 
