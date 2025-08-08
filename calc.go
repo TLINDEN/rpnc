@@ -620,5 +620,5 @@ func (c *Calc) PrintHelp() {
 		}
 	}
 
-	Pager(output)
+	Pager("rpn help overview", output)
 }

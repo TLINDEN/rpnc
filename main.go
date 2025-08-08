@@ -18,11 +18,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"log"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/chzyer/readline"
@@ -192,19 +189,5 @@ func inputIsStdin() bool {
 }
 
 func man() {
-	var buf bytes.Buffer
-
-	man := exec.Command("less", "-")
-
-	buf.WriteString(manpage)
-
-	man.Stdout = os.Stdout
-	man.Stdin = &buf
-	man.Stderr = os.Stderr
-
-	err := man.Run()
-
-	if err != nil {
-		log.Fatal(err)
-	}
+	Pager("rpn manual page", manpage)
 }

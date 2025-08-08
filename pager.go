@@ -30,6 +30,7 @@ var (
 
 type model struct {
 	content  string
+	title    string
 	ready    bool
 	viewport viewport.Model
 }
@@ -86,7 +87,8 @@ func (m model) View() string {
 }
 
 func (m model) headerView() string {
-	title := titleStyle.Render("RPN Help Overview")
+	// title := titleStyle.Render("RPN Help Overview")
+	title := titleStyle.Render(m.title)
 	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(title)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)
 }
@@ -104,9 +106,9 @@ func max(a, b int) int {
 	return b
 }
 
-func Pager(message string) {
+func Pager(title, message string) {
 	p := tea.NewProgram(
-		model{content: message},
+		model{content: message, title: title},
 		tea.WithAltScreen(),       // use the full size of the terminal in its "alternate screen buffer"
 		tea.WithMouseCellMotion(), // turn on mouse support so we can track the mouse wheel
 	)
