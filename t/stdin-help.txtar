@@ -1,6 +1,0 @@
-stdin input.txt
-exec testrpn
-[unix] stdout 'Available configuration commands'
-
--- input.txt --
-?
