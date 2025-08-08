@@ -1,4 +1,4 @@
 exec echo 10 10 +
 stdin stdout
-exec testrpn
+exec rpn
 [unix] stdout '20\n'

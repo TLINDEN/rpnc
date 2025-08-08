@@ -1,4 +1,4 @@
-exec testrpn -d -c test.lua 3 5 lower
+exec rpn -d -c test.lua 3 5 lower
 stdout '3\n'
 
 -- test.lua --

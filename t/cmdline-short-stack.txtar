@@ -1,2 +1,2 @@
-! exec testrpn 4 +
+! exec rpn 4 +
 stdout 'stack doesn''t provide enough arguments'

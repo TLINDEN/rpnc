@@ -1,5 +1,5 @@
 stdin input.txt
-exec testrpn
+exec rpn
 [unix] stdout '28\n'
 
 -- input.txt --

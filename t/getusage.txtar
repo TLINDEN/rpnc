@@ -1,2 +1,2 @@
-exec testrpn -h
+exec rpn -h
 stdout 'This is rpn'

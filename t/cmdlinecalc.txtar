@@ -1,2 +1,2 @@
-exec testrpn 44 55 *
+exec rpn 44 55 *
 stdout '2420\n'

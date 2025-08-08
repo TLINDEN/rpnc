@@ -1,4 +1,4 @@
 exec echo 1 2 3 4 5 batch median
 stdin stdout
-exec testrpn
+exec rpn
 [unix] stdout '3\n'
