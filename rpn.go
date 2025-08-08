@@ -166,14 +166,10 @@ DESCRIPTION
 
     Conversion functions:
 
-        cm-to-inch
-        inch-to-cm
-        gallons-to-liters
-        liters-to-gallons
-        yards-to-meters
-        meters-to-yards
-        miles-to-kilometers
-        kilometers-to-miles
+        cm-to-inch          yards-to-meters         bytes-to-kilobytes
+        inch-to-cm          meters-to-yards         bytes-to-megabytes
+        gallons-to-liters   miles-to-kilometers     bytes-to-gigabytes
+        liters-to-gallons   kilometers-to-miles     bytes-to-terabytes
 
     Configuration Commands:
 

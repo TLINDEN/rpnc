@@ -437,6 +437,30 @@ func DefineFunctions() Funcalls {
 			},
 			1),
 
+		"bytes-to-kilobytes": NewFuncall(
+			func(arg Numbers) Result {
+				return NewResult(arg[0]/1024, nil)
+			},
+			1),
+
+		"bytes-to-megabytes": NewFuncall(
+			func(arg Numbers) Result {
+				return NewResult(arg[0]/1024/1024, nil)
+			},
+			1),
+
+		"bytes-to-gigabytes": NewFuncall(
+			func(arg Numbers) Result {
+				return NewResult(arg[0]/1024/1024/1024, nil)
+			},
+			1),
+
+		"bytes-to-terabytes": NewFuncall(
+			func(arg Numbers) Result {
+				return NewResult(arg[0]/1024/1024/1024/1024, nil)
+			},
+			1),
+
 		"or": NewFuncall(
 			func(arg Numbers) Result {
 				return NewResult(float64(int(arg[0])|int(arg[1])), nil)
