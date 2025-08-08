@@ -373,6 +373,8 @@ func FuzzEval(f *testing.F) {
 		"b",
 		"#444",
 		"<X",
+		"?",
+		"help",
 	}
 
 	for _, item := range legal {
@@ -384,7 +386,11 @@ func FuzzEval(f *testing.F) {
 	var hexnum, hour, min int
 
 	f.Fuzz(func(t *testing.T, line string) {
-		t.Logf("Stack:\n%v\n", calc.stack.All())
+		t.Logf("Stack:\n%v\nLine: <%s>\n", calc.stack.All(), line)
+		switch line {
+		case "help", "?":
+			return
+		}
 		if err := calc.EvalItem(line); err == nil {
 			t.Logf("given: <%s>", line)
 			// not corpus and empty?
