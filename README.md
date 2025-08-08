@@ -23,6 +23,7 @@ Features:
 - history
 - comments (comment character is `#`)
 - variables
+- help screen uses comfortable internal pager
 
 ## Demo
 

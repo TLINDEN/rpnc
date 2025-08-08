@@ -78,6 +78,12 @@ erf erfc  erfcinv erfinv exp  exp2 expm1 floor  gamma ilogb j0  j1 log
 log10 log1p log2 logb pow round roundtoeven sin sinh tan tanh trunc y0
 y1 copysign dim hypot
 
+Converter functions:
+cm-to-inch              yards-to-meters         bytes-to-kilobytes
+inch-to-cm              meters-to-yards         bytes-to-megabytes
+gallons-to-liters       miles-to-kilometers     bytes-to-gigabytes
+liters-to-gallons       kilometers-to-miles     bytes-to-terabytes
+
 Batch functions:
 sum                  sum of all values (alias: +)
 max                  max of all values
@@ -579,46 +585,40 @@ func sortcommands(hash Commands) []string {
 }
 
 func (c *Calc) PrintHelp() {
-	fmt.Println("Available configuration commands:")
+	output := "Available configuration commands:\n"
 
 	for _, name := range sortcommands(c.SettingsCommands) {
-		fmt.Printf("%-20s %s\n", name, c.SettingsCommands[name].Help)
+		output += fmt.Sprintf("%-20s %s\n", name, c.SettingsCommands[name].Help)
 	}
 
-	fmt.Println()
-
-	fmt.Println("Available show commands:")
+	output += "\nAvailable show commands:\n"
 
 	for _, name := range sortcommands(c.ShowCommands) {
-		fmt.Printf("%-20s %s\n", name, c.ShowCommands[name].Help)
+		output += fmt.Sprintf("%-20s %s\n", name, c.ShowCommands[name].Help)
 	}
 
-	fmt.Println()
-
-	fmt.Println("Available stack manipulation commands:")
+	output += "\nAvailable stack manipulation commands:\n"
 
 	for _, name := range sortcommands(c.StackCommands) {
-		fmt.Printf("%-20s %s\n", name, c.StackCommands[name].Help)
+		output += fmt.Sprintf("%-20s %s\n", name, c.StackCommands[name].Help)
 	}
 
-	fmt.Println()
-
-	fmt.Println("Other commands:")
+	output += "\nOther commands:\n"
 
 	for _, name := range sortcommands(c.Commands) {
-		fmt.Printf("%-20s %s\n", name, c.Commands[name].Help)
+		output += fmt.Sprintf("%-20s %s\n", name, c.Commands[name].Help)
 	}
 
-	fmt.Println()
-
-	fmt.Println(Help)
+	output += "\n" + Help
 
 	// append lua functions, if any
 	if len(LuaFuncs) > 0 {
-		fmt.Println("Lua functions:")
+		output += "\nLua functions:\n"
 
 		for name, function := range LuaFuncs {
-			fmt.Printf("%-20s %s\n", name, function.help)
+			output += fmt.Sprintf("%-20s %s\n", name, function.help)
 		}
 	}
+
+	Pager(output)
 }
