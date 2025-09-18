@@ -20,6 +20,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -263,7 +264,11 @@ func CommandEdit(calc *Calc) {
 		return
 	}
 
-	defer os.Remove(tmp.Name())
+	defer func() {
+		if err := os.Remove(tmp.Name()); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	comment := `# add or remove numbers as you wish.
 # each number must be on its own line.
@@ -286,7 +291,9 @@ func CommandEdit(calc *Calc) {
 		}
 	}
 
-	tmp.Close()
+	if err := tmp.Close(); err != nil {
+		log.Fatal(err)
+	}
 
 	// determine which editor to use
 	editor := "vi"
@@ -321,7 +328,11 @@ func CommandEdit(calc *Calc) {
 
 		return
 	}
-	defer modified.Close()
+	defer func() {
+		if err := modified.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	// reset the stack
 	calc.stack.Clear()

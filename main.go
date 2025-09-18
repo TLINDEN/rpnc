@@ -19,6 +19,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -143,7 +144,12 @@ func Main() int {
 	if err != nil {
 		panic(err)
 	}
-	defer reader.Close()
+	defer func() {
+		if err := reader.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
 	reader.CaptureExitSignal()
 
 	if inputIsStdin() {
