@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-package main
+package cmd
 
 import (
 	"fmt"
@@ -327,7 +327,7 @@ func TestCalcLua(t *testing.T) {
 	LuaInterpreter = lua.NewState(lua.Options{SkipOpenLibs: true})
 	defer LuaInterpreter.Close()
 
-	luarunner := NewInterpreter("example.lua", false)
+	luarunner := NewInterpreter("../example.lua", false)
 	luarunner.InitLua()
 	calc.SetInt(luarunner)
 

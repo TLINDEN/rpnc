@@ -25,20 +25,20 @@ UID       = root
 GID       = 0
 HAVE_POD := $(shell pod2text -h 2>/dev/null)
 
-all: $(tool).1 $(tool).go buildlocal
+all: $(tool).1 cmd/$(tool).go buildlocal
 
 %.1: %.pod
 ifdef HAVE_POD
 	  pod2man -c "User Commands" -r 1 -s 1 $*.pod > $*.1
 endif
 
-%.go: %.pod
+cmd/%.go: %.pod
 ifdef HAVE_POD
-	  echo "package main" > $*.go
-	  echo >> $*.go
-	  echo "var manpage = \`" >> $*.go
-	  pod2text $*.pod >> $*.go
-	  echo "\`" >> $*.go
+	  echo "package main" > cmd/$*.go
+	  echo >> cmd/$*.go
+	  echo "var manpage = \`" >> cmd/$*.go
+	  pod2text cmd/$*.pod >> cmd/$*.go
+	  echo "\`" >> cmd/$*.go
 endif
 
 buildlocal:

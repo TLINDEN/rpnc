@@ -1,4 +1,4 @@
-package main
+package cmd
 
 // pager setup using bubbletea
 // file shamlelessly copied from:
