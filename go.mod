@@ -8,7 +8,7 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/chzyer/readline v1.5.1
 	github.com/rogpeppe/go-internal v1.14.1
-	github.com/spf13/pflag v1.0.7
+	github.com/spf13/pflag v1.0.10
 	github.com/yuin/gopher-lua v1.1.1
 )
 
