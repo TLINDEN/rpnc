@@ -247,6 +247,11 @@ connection to the outside!**
 
 There are multiple ways to install **rpn**:
 
+- You can use [stew](https://github.com/marwanhawari/stew) to install rpnc:
+  ```default
+  stew install tlinden/rpnc
+  ```
+
 - Go to the [latest release page](https://github.com/tlinden/rpn/releases/latest),
   locate the binary for your operating system and platform.
   
