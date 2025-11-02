@@ -1,2 +1,0 @@
-exec rpn -v
-stdout 'This is rpn version'

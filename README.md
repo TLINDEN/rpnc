@@ -1,4 +1,4 @@
-
+[![status-badge](https://ci.codeberg.org/api/badges/15511/status.svg?branch=main)](https://ci.codeberg.org/repos/15511)
 [![License](https://img.shields.io/badge/license-GPL-blue.svg)](https://codeberg.org/scip/rpnc/raw/branch/master/LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/codeberg.org/scip/rpnc)](https://goreportcard.com/report/codeberg.org/scip/rpnc) 
 
