@@ -1,14 +1,14 @@
 ## Programmable command-line calculator using reverse polish notation
 
-[![Actions](https://github.com/tlinden/rpnc/actions/workflows/ci.yaml/badge.svg)](https://github.com/tlinden/rpnc/actions)
-[![License](https://img.shields.io/badge/license-GPL-blue.svg)](https://github.com/tlinden/rpnc/blob/master/LICENSE)
-[![Go Report Card](https://goreportcard.com/badge/github.com/tlinden/rpnc)](https://goreportcard.com/report/github.com/tlinden/rpnc) 
+[![License](https://img.shields.io/badge/license-GPL-blue.svg)](https://codeberg.org/scip/rpnc/raw/branch/master/LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/codeberg.org/scip/rpnc)](https://goreportcard.com/report/codeberg.org/scip/rpnc) 
 
 This is a small commandline calculator which takes its input in
 [reverse polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation)
 form.
 
 Features:
+
 
 - unlimited stack
 - undo
@@ -252,7 +252,7 @@ There are multiple ways to install **rpn**:
   stew install tlinden/rpnc
   ```
 
-- Go to the [latest release page](https://github.com/tlinden/rpn/releases/latest),
+- Go to the [latest release page](https://codeberg.org/scip/rpn/releases/latest),
   locate the binary for your operating system and platform.
   
   Download it and put it into some directory within your `$PATH` variable.
@@ -265,7 +265,7 @@ There are multiple ways to install **rpn**:
   
 - You can also install from source. Issue the following commands in your shell:
   ```
-  git clone https://github.com/TLINDEN/rpn.git
+  git clone https://codeberg.org/scip/rpn.git
   cd rpn
   make
   sudo make install
@@ -279,7 +279,7 @@ hesitate to ask me about it, I'll add it.
 
 The  documentation  is  provided  as  a unix  man-page.   It  will  be
 automatically installed if  you install from source.  However, you can
-[read the man-page online](https://github.com/TLINDEN/rpnc/blob/master/rpn.pod)
+[read the man-page online](https://codeberg.org/scip/rpnc/raw/branch/master/rpn.pod)
 
 Or if you cloned  the repository you can read it  this way (perl needs
 to be installed though): `perldoc rpn.pod`.
@@ -296,7 +296,7 @@ best way for me to forget to do something.
 
 In order to report a bug,  unexpected behavior, feature requests or to
 submit    a    patch,    please    open   an    issue    on    github:
-https://github.com/TLINDEN/rpnc/issues.
+https://codeberg.org/scip/rpnc/issues.
 
 ## Copyright and license
 
@@ -308,4 +308,4 @@ T.v.Dein <tom AT vondein DOT org>
 
 ## Project homepage
 
-https://github.com/TLINDEN/rpnc
+https://codeberg.org/scip/rpnc

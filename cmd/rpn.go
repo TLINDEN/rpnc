@@ -330,7 +330,7 @@ GETTING HELP
 BUGS
     In order to report a bug, unexpected behavior, feature requests or to
     submit a patch, please open an issue on github:
-    <https://github.com/TLINDEN/rpnc/issues>.
+    <https://codeberg.org/scip/rpnc/issues>.
 
 LICENSE
     This software is licensed under the GNU GENERAL PUBLIC LICENSE version

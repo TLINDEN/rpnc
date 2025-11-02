@@ -367,7 +367,7 @@ tarball, there will also be a manual page you can read using C<man rpn>.
 
 In order to report a bug, unexpected behavior, feature requests
 or to submit a patch, please open an issue on github:
-L<https://github.com/TLINDEN/rpnc/issues>.
+L<https://codeberg.org/scip/rpnc/issues>.
 
 =head1 LICENSE
 
