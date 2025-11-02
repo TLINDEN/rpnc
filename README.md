@@ -252,7 +252,7 @@ There are multiple ways to install **rpn**:
   stew install tlinden/rpnc
   ```
 
-- Go to the [latest release page](https://codeberg.org/scip/rpn/releases/latest),
+- Go to the [latest release page](https://codeberg.org/scip/rpn/releases/),
   locate the binary for your operating system and platform.
   
   Download it and put it into some directory within your `$PATH` variable.
