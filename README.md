@@ -1,7 +1,12 @@
-## Programmable command-line calculator using reverse polish notation
 
 [![License](https://img.shields.io/badge/license-GPL-blue.svg)](https://codeberg.org/scip/rpnc/raw/branch/master/LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/codeberg.org/scip/rpnc)](https://goreportcard.com/report/codeberg.org/scip/rpnc) 
+
+## Programmable command-line calculator using reverse polish notation
+
+> [!IMPORTANT]
+> This app is now being maintained on [Codeberg](https://codeberg.org/scip/rpnc/).
+
 
 This is a small commandline calculator which takes its input in
 [reverse polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation)
